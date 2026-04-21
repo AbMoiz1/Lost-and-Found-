@@ -1,0 +1,8 @@
+# Dependencies added in task 8.1
+fastapi
+uvicorn[standard]
+aio-pika
+aiosmtplib
+httpx
+hypothesis
+pytest

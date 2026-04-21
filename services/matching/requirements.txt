@@ -1,0 +1,10 @@
+# Dependencies added in task 7.1
+fastapi
+uvicorn[standard]
+psycopg2-binary
+redis
+aio-pika
+scikit-learn
+hypothesis
+pytest
+httpx

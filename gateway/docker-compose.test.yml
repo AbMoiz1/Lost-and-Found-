@@ -1,0 +1,16 @@
+version: "3.9"
+
+# Simple nginx gateway for testing without backend services
+services:
+  gateway-test:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./nginx.test.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "8081:8080"  # Use different port to avoid conflicts
+    networks:
+      - test-network
+
+networks:
+  test-network:
+    driver: bridge

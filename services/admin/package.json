@@ -1,0 +1,31 @@
+{
+  "name": "admin-service",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "test": "jest --runInBand",
+    "test:run": "jest --runInBand --forceExit"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.11.5",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.12",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/pg": "^8.11.6",
+    "@types/supertest": "^6.0.2",
+    "fast-check": "^3.19.0",
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0",
+    "ts-jest": "^29.1.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}

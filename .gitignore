@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.hypothesis/
+.pytest_cache/
+
+# Build outputs
+dist/
+*.js.map
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.kiro/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker volumes
+localstack-data/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Logs
+*.log
