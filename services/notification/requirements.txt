@@ -6,3 +6,4 @@ aiosmtplib
 httpx
 hypothesis
 pytest
+boto3

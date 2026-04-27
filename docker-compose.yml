@@ -1,7 +1,5 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # Lost & Found Portal — Docker Compose (local development)
-# Run: docker compose up
-# Stop + remove volumes: docker compose down -v
 # ─────────────────────────────────────────────────────────────────────────────
 
 x-node-service: &node-service

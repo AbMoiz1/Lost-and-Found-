@@ -2,7 +2,26 @@ import { Client } from '@opensearch-project/opensearch';
 
 const OPENSEARCH_URL = process.env.OPENSEARCH_URL ?? 'http://localhost:9200';
 
-export const opensearchClient = new Client({ node: OPENSEARCH_URL });
+// On AWS, OpenSearch requires authentication. Parse credentials from env.
+let clientOptions: any = { node: OPENSEARCH_URL };
+
+const credentialsJson = process.env.OPENSEARCH_CREDENTIALS;
+if (credentialsJson) {
+  try {
+    const creds = JSON.parse(credentialsJson);
+    const url = new URL(OPENSEARCH_URL);
+    url.username = creds.username;
+    url.password = creds.password;
+    clientOptions = {
+      node: url.toString(),
+      ssl: { rejectUnauthorized: false },
+    };
+  } catch (e) {
+    console.warn('Failed to parse OPENSEARCH_CREDENTIALS, using URL as-is');
+  }
+}
+
+export const opensearchClient = new Client(clientOptions);
 
 const INDEX_NAME = 'items';
 

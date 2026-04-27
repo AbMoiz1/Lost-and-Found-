@@ -10,6 +10,7 @@
     "test:run": "jest --runInBand --forceExit"
   },
   "dependencies": {
+    "@aws-sdk/client-sns": "^3.1037.0",
     "amqplib": "^0.10.4",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.3",

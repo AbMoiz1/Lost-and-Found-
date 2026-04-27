@@ -30,3 +30,12 @@ coverage/
 
 # Logs
 *.log
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfplan
+terraform.tfstate.d/
+.terraform.lock.hcl
+msg.json

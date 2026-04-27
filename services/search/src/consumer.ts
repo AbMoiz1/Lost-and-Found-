@@ -2,7 +2,9 @@ import amqplib from 'amqplib';
 import { opensearchClient, INDEX_NAME } from './opensearch';
 
 const RABBITMQ_URL = process.env.RABBITMQ_URL ?? 'amqp://localhost:5672';
+const SQS_QUEUE_URL = process.env.SQS_SEARCH_ITEMS_QUEUE_URL;
 const EXCHANGE = 'items';
+const useAws = !!SQS_QUEUE_URL;
 
 interface ItemEvent {
   eventType: 'item.created' | 'item.updated';
@@ -40,6 +42,45 @@ async function indexItem(event: ItemEvent): Promise<void> {
 }
 
 export async function startConsumer(): Promise<void> {
+  if (useAws) {
+    const { SQSClient, ReceiveMessageCommand, DeleteMessageCommand } = await import('@aws-sdk/client-sqs');
+    const sqsClient = new SQSClient({ region: process.env.AWS_REGION ?? 'us-east-1' });
+    console.log(`Search SQS consumer polling: ${SQS_QUEUE_URL}`);
+
+    const poll = async () => {
+      while (true) {
+        try {
+          const response = await sqsClient.send(new ReceiveMessageCommand({
+            QueueUrl: SQS_QUEUE_URL,
+            MaxNumberOfMessages: 10,
+            WaitTimeSeconds: 20,
+          }));
+
+          for (const msg of response.Messages ?? []) {
+            try {
+              const event: ItemEvent = JSON.parse(msg.Body ?? '{}');
+              if (event.eventType === 'item.created' || event.eventType === 'item.updated') {
+                await indexItem(event);
+                console.log(`Indexed item ${event.itemId} (${event.eventType})`);
+              }
+              await sqsClient.send(new DeleteMessageCommand({
+                QueueUrl: SQS_QUEUE_URL,
+                ReceiptHandle: msg.ReceiptHandle,
+              }));
+            } catch (err) {
+              console.error('Failed to process SQS message:', err);
+            }
+          }
+        } catch (err) {
+          console.error('SQS poll error:', err);
+          await new Promise(r => setTimeout(r, 5000));
+        }
+      }
+    };
+    poll(); // start polling in background (don't await)
+    return;
+  }
+
   const connection = await amqplib.connect(RABBITMQ_URL);
   const channel = await connection.createChannel();
 

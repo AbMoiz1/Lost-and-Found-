@@ -1,26 +1,22 @@
 """
-RabbitMQ consumer for the Notification Service.
+Consumer for the Notification Service.
 
-Listens on the `matches` exchange for `match.created` events.
-For each event:
-  1. Fetches user contact info from Auth Service via internal HTTP
-  2. Sends email via SMTP (MailHog)
-  3. Sends SMS if user has SMS enabled
-  4. Retries up to 3 times with exponential backoff (1s, 2s, 4s) on failure
+Supports both RabbitMQ (local) and SQS (AWS).
+Listens for `match.created` events, fetches user info, sends notifications.
 """
 import asyncio
 import json
 import os
 from typing import Dict, Any
 
-import aio_pika
 import httpx
 
 from notifier import send_notification
 
-
 RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost/")
+SQS_QUEUE_URL = os.getenv("SQS_NOTIFICATION_MATCHES_QUEUE_URL")
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://auth:4001")
+USE_AWS = bool(SQS_QUEUE_URL)
 
 
 async def fetch_user_contact_info(user_id: str) -> Dict[str, Any] | None:
@@ -80,7 +76,35 @@ Please check the portal to view the details and contact the finder.
 
 
 async def start_consumer() -> None:
-    """Connect to RabbitMQ and start consuming match.created events."""
+    """Start consuming match.created events from SQS (AWS) or RabbitMQ (local)."""
+    if USE_AWS:
+        import boto3
+        sqs = boto3.client("sqs", region_name=os.getenv("AWS_REGION", "us-east-1"))
+        print(f"Notification SQS consumer polling: {SQS_QUEUE_URL}")
+
+        while True:
+            try:
+                response = sqs.receive_message(
+                    QueueUrl=SQS_QUEUE_URL,
+                    MaxNumberOfMessages=10,
+                    WaitTimeSeconds=20,
+                )
+                for msg in response.get("Messages", []):
+                    try:
+                        event = json.loads(msg["Body"])
+                        await handle_match_created(event)
+                        sqs.delete_message(
+                            QueueUrl=SQS_QUEUE_URL,
+                            ReceiptHandle=msg["ReceiptHandle"],
+                        )
+                    except Exception as err:
+                        print(f"Failed to process SQS message: {err}")
+            except Exception as err:
+                print(f"SQS poll error: {err}")
+                await asyncio.sleep(5)
+        return
+
+    import aio_pika
     connection = await aio_pika.connect_robust(RABBITMQ_URL)
     async with connection:
         channel = await connection.channel()
@@ -97,7 +121,7 @@ async def start_consumer() -> None:
 
         await queue.consume(on_message)
         print("Notification consumer started. Waiting for match.created events...")
-        await asyncio.Future()  # run forever
+        await asyncio.Future()
 
 
 if __name__ == "__main__":

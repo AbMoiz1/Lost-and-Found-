@@ -1,12 +1,8 @@
 """
-RabbitMQ consumer for the Matching Service.
+Consumer for the Matching Service.
 
-Listens on the `items` exchange for `item.created` events.
-For each new item:
-  1. Queries opposite-type items from the DB.
-  2. Scores all pairs using scorer.score_items().
-  3. Persists matches above MATCH_THRESHOLD.
-  4. Publishes a `match.created` event for each new match.
+Supports both RabbitMQ (local) and SQS+SNS (AWS).
+Listens for `item.created` events, scores pairs, publishes `match.created`.
 """
 from __future__ import annotations
 
@@ -16,14 +12,16 @@ import os
 import uuid
 from datetime import datetime, timezone
 
-import aio_pika
 import psycopg2
 
 from db import get_connection
 from scorer import score_items
 
 RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost/")
+SQS_QUEUE_URL = os.getenv("SQS_MATCHING_ITEMS_QUEUE_URL")
+SNS_MATCHES_TOPIC_ARN = os.getenv("SNS_MATCHES_TOPIC_ARN")
 MATCH_THRESHOLD = float(os.getenv("MATCH_THRESHOLD", "0.5"))
+USE_AWS = bool(SQS_QUEUE_URL)
 
 
 def _fetch_item_owner(item_id: str) -> str:
@@ -97,16 +95,13 @@ def _persist_match(conn, lost_id: str, found_id: str, score: float) -> str | Non
 
 
 async def _publish_match_created(
-    channel: aio_pika.abc.AbstractChannel,
+    channel,
     match_id: str,
     lost_item_id: str,
     found_item_id: str,
     lost_owner_id: str,
     score: float,
 ) -> None:
-    exchange = await channel.declare_exchange(
-        "matches", aio_pika.ExchangeType.FANOUT, durable=True
-    )
     event = {
         "eventType": "match.created",
         "matchId": match_id,
@@ -116,6 +111,17 @@ async def _publish_match_created(
         "score": score,
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
+
+    if USE_AWS and SNS_MATCHES_TOPIC_ARN:
+        import boto3
+        sns = boto3.client("sns", region_name=os.getenv("AWS_REGION", "us-east-1"))
+        sns.publish(TopicArn=SNS_MATCHES_TOPIC_ARN, Message=json.dumps(event))
+        return
+
+    import aio_pika
+    exchange = await channel.declare_exchange(
+        "matches", aio_pika.ExchangeType.FANOUT, durable=True
+    )
     await exchange.publish(
         aio_pika.Message(body=json.dumps(event).encode()),
         routing_key="",
@@ -169,7 +175,35 @@ async def handle_item_created(
 
 
 async def start_consumer() -> None:
-    """Connect to RabbitMQ and start consuming item.created events."""
+    """Start consuming item.created events from SQS (AWS) or RabbitMQ (local)."""
+    if USE_AWS:
+        import boto3
+        sqs = boto3.client("sqs", region_name=os.getenv("AWS_REGION", "us-east-1"))
+        print(f"Matching SQS consumer polling: {SQS_QUEUE_URL}")
+
+        while True:
+            try:
+                response = sqs.receive_message(
+                    QueueUrl=SQS_QUEUE_URL,
+                    MaxNumberOfMessages=10,
+                    WaitTimeSeconds=20,
+                )
+                for msg in response.get("Messages", []):
+                    try:
+                        event = json.loads(msg["Body"])
+                        await handle_item_created(event, None)
+                        sqs.delete_message(
+                            QueueUrl=SQS_QUEUE_URL,
+                            ReceiptHandle=msg["ReceiptHandle"],
+                        )
+                    except Exception as err:
+                        print(f"Failed to process SQS message: {err}")
+            except Exception as err:
+                print(f"SQS poll error: {err}")
+                await asyncio.sleep(5)
+        return
+
+    import aio_pika
     connection = await aio_pika.connect_robust(RABBITMQ_URL)
     async with connection:
         channel = await connection.channel()
@@ -186,7 +220,7 @@ async def start_consumer() -> None:
 
         await queue.consume(on_message)
         print("Matching consumer started. Waiting for item.created events...")
-        await asyncio.Future()  # run forever
+        await asyncio.Future()
 
 
 if __name__ == "__main__":

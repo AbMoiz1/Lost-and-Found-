@@ -1,240 +1,130 @@
-# Lost & Found Portal
+# Lost & Found Portal — ECS on EC2 Deployment
 
-A microservices-based web application for reporting lost and found items. Users report what they've lost or found, and the system automatically matches them using a scoring algorithm based on category, location, and date proximity. When a match is found, the owner gets an email notification.
+A microservices-based web application deployed on AWS using ECS on EC2, Terraform, and 18 infrastructure modules. Users report lost/found items, and the system automatically matches them using a scoring algorithm. When a match is found, the owner gets an email via SES.
 
-## Architecture Overview
+## Live URL
 
-```
-Browser (:3000)
-  │
-  ▼
-Frontend Nginx ── serves React app
-  │                proxies /api/* ▼
-  │
-Gateway Nginx (:8080) ── rate limiting (100 req/min)
-  │
-  ├── /api/auth/*   → Auth Service (:4001)     → PostgreSQL (auth_db)
-  ├── /api/items/*  → Item Service (:4002)     → PostgreSQL (item_db) + RabbitMQ
-  ├── /api/search/* → Search Service (:4003)   → OpenSearch
-  ├── /api/images/* → Image Service (:4004)    → S3 (LocalStack)
-  └── /api/admin/*  → Admin Service (:4005)    → All 4 PostgreSQL DBs
-```
+`https://d1zjw94zgeibun.cloudfront.net`
 
-### Event-Driven Flow (RabbitMQ)
+## Architecture
 
 ```
-Item Service ──publishes "item.created"──→ RabbitMQ "items" exchange (fanout)
-                                              ├──→ Search Service (indexes in OpenSearch)
-                                              └──→ Matching Service (scores against opposite items)
-                                                      │
-                                                      ▼ match found (score ≥ 0.5)
-                                              RabbitMQ "matches" exchange (fanout)
-                                                      │
-                                                      ▼
-                                              Notification Service
-                                                      ├── HTTP → Auth Service (get user email)
-                                                      └── SMTP → MailHog (send email)
+CloudFront (CDN)
+  ├── /* → S3 (React frontend)
+  └── /api/* → Public ALB → Nginx Gateway (ECS) → Internal ALB
+                                                      ├── Auth Service (ECS)     → RDS auth_db
+                                                      ├── Item Service (ECS)     → RDS item_db → SNS
+                                                      ├── Search Service (ECS)   → OpenSearch
+                                                      ├── Image Service (ECS)    → S3 images
+                                                      └── Admin Service (ECS)    → All RDS DBs
+
+SNS items-topic → SQS → Search Service (indexes in OpenSearch)
+                → SQS → Matching Service (ECS, Python) → RDS + Redis
+                           └── SNS matches-topic → SQS → Notification Service (ECS) → SES email
 ```
 
-## Tech Stack
+## AWS Services Used
 
-### Frontend
-- React 19 with TypeScript
-- Vite (build tool)
-- Tailwind CSS (styling)
-- React Router (client-side routing)
-- React Query (server state management)
-- Zustand (client state management)
-- Zod (form validation)
-- Axios (HTTP client)
+| Service | Replaces (Local) | Purpose |
+|---------|-----------------|---------|
+| VPC + 3 AZs | Docker bridge network | Network isolation, HA |
+| ECS on EC2 | docker-compose up | Container orchestration |
+| Public ALB | Gateway Nginx (:8080) | Internet entry point |
+| Internal ALB | Docker DNS | Service-to-service routing |
+| RDS PostgreSQL Multi-AZ | 4 PostgreSQL containers | Managed databases with failover |
+| ElastiCache Redis | redis:7-alpine | Managed cache with Multi-AZ |
+| OpenSearch Service | opensearch:2.13.0 | Managed search engine |
+| SNS + SQS | RabbitMQ fanout exchanges | Serverless messaging |
+| S3 | LocalStack S3 + Nginx | Frontend hosting + image storage |
+| CloudFront | Frontend Nginx (:3000) | CDN with 400+ edge locations |
+| WAF | Nginx rate limiting | SQL injection, XSS, rate limiting |
+| SES | MailHog | Real email delivery |
+| Secrets Manager | .env file | Encrypted secrets with rotation |
+| IAM | No access control | Per-service least-privilege roles |
+| ECR | Local docker build | Container image registry |
+| CloudWatch | docker logs | Centralized logging + alarms |
+| Route 53 | localhost | DNS (ready for custom domain) |
 
-### Backend — TypeScript Services
-- Node.js 20 with TypeScript
-- Express.js (web framework)
-- PostgreSQL via `pg` (database)
-- amqplib (RabbitMQ client)
-- jsonwebtoken + bcrypt (auth)
-- Zod (request validation)
-- AWS SDK v3 (S3 client for image uploads)
+## Terraform Modules (18)
 
-### Backend — Python Services
-- Python 3.12
-- FastAPI + Uvicorn (Matching Service)
-- aio-pika (async RabbitMQ client)
-- scikit-learn (TF-IDF + cosine similarity for matching)
-- psycopg2 (PostgreSQL)
-- redis (score caching)
-- aiosmtplib (async email sending)
+```
+terraform/modules/
+├── state/                    # S3 + DynamoDB for Terraform state
+├── networking/
+│   ├── vpc/                  # VPC, 6 subnets, IGW, 3 NATs, route tables
+│   └── security-groups/      # 6 SGs with chaining rules
+├── data/
+│   ├── rds/                  # 4 PostgreSQL databases (Multi-AZ)
+│   ├── elasticache/          # Redis replication group
+│   └── opensearch/           # OpenSearch domain (2 nodes)
+├── messaging/
+│   └── sns-sqs/              # 2 SNS topics, 3 SQS queues, 3 DLQs
+├── storage/
+│   ├── s3/                   # Images bucket + frontend bucket
+│   └── secrets/              # 6 secrets in Secrets Manager
+├── identity/
+│   ├── iam/                  # 9 IAM roles (execution + 8 task roles)
+│   └── ecr/                  # 8 Docker image repositories
+├── compute/
+│   └── ecs/                  # ECS cluster, ASG, 8 task defs, 8 services
+├── edge/
+│   ├── alb/                  # Public + Internal ALBs, target groups
+│   ├── cloudfront/           # CDN distribution
+│   ├── waf/                  # Web Application Firewall
+│   └── route53/              # DNS (conditional on domain)
+├── email/
+│   └── ses/                  # Email delivery
+└── monitoring/
+    └── cloudwatch/           # 9 alarms (CPU, 5xx, DLQ, RDS)
+```
 
-### Infrastructure (Local)
-- Docker & Docker Compose
-- Nginx (frontend serving + API gateway)
-- PostgreSQL 16 (4 separate databases)
-- RabbitMQ 3.13 (message broker)
-- OpenSearch 2.13 (full-text search)
-- Redis 7 (in-memory cache)
-- LocalStack (fake S3)
-- MailHog (fake SMTP server)
+## Deployment
 
-## Services
+### Prerequisites
+- AWS CLI configured with admin access
+- Terraform >= 1.5
+- Docker
 
-| Service | Language | Port | Description |
-|---------|----------|------|-------------|
-| Frontend | TypeScript/React | 3000 | SPA served by nginx, proxies API calls |
-| Gateway | Nginx config | 8080 | Rate limiting + path-based routing to services |
-| Auth | TypeScript/Express | 4001 | Registration, login, JWT tokens, password reset |
-| Item | TypeScript/Express | 4002 | CRUD for lost/found items, claims, publishes events |
-| Search | TypeScript/Express | 4003 | Full-text search via OpenSearch, consumes item events |
-| Image | TypeScript/Express | 4004 | Image upload/resize/storage via S3 |
-| Admin | TypeScript/Express | 4005 | Dashboard stats, user management, claim approval |
-| Matching | Python/FastAPI | 8000 | Scores items using TF-IDF, publishes match events |
-| Notification | Python | — | Consumes match events, sends emails via SMTP |
-
-## Matching Algorithm
-
-The Matching Service scores item pairs on a 0.0–1.0 scale:
-
-- **Category match** (+0.4) — same category (e.g., both "Electronics")
-- **Location similarity** (+0.3) — TF-IDF cosine similarity of location strings
-- **Date proximity** (+0.3) — `max(0, 1 - |days_diff| / 30)`
-
-If the score is ≥ 0.5, a match is created and the owner is notified.
-
-## Prerequisites
-
-- Docker & Docker Compose
-- Git
-
-## Getting Started
-
-1. Clone the repository:
+### Deploy Infrastructure
 ```bash
-git clone <repository-url>
-cd lost-and-found
+cd terraform
+terraform init
+terraform apply -var-file="environments/dev.tfvars"
 ```
 
-2. Create the environment file:
+### Build and Push Docker Images
 ```bash
-cp .env.example .env
+# Login to ECR
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <account-id>.dkr.ecr.us-east-1.amazonaws.com
+
+# Build and push all services
+for svc in gateway auth item search image admin matching notification; do
+  docker build -t <account-id>.dkr.ecr.us-east-1.amazonaws.com/moiz-lost-and-found/$svc:latest -f services/$svc/Dockerfile services/
+  docker push <account-id>.dkr.ecr.us-east-1.amazonaws.com/moiz-lost-and-found/$svc:latest
+done
 ```
 
-3. Start all services:
+### Upload Frontend
 ```bash
-docker compose up
+cd frontend && npm run build
+aws s3 sync dist/ s3://moiz-lost-and-found-frontend-dev --delete
+aws cloudfront create-invalidation --distribution-id <dist-id> --paths "/*"
 ```
 
-4. Wait for all health checks to pass, then open:
-- **App**: http://localhost:3000
-- **MailHog** (email viewer): http://localhost:8025
-- **RabbitMQ Management**: http://localhost:15672 (guest/guest)
+## Cost Estimate (Dev)
 
-## Project Structure
+| Resource | Monthly Cost |
+|----------|-------------|
+| NAT Gateways (3x) | ~$100 |
+| RDS Multi-AZ (4x db.t3.micro) | ~$60 |
+| OpenSearch (2x t3.small.search) | ~$54 |
+| ALBs (2x) | ~$32 |
+| ElastiCache Redis (2x cache.t3.micro) | ~$26 |
+| EC2 instances (2x t3.medium) | ~$60 |
+| **Total** | **~$332/month** |
 
-```
-├── frontend/                  # React SPA (TypeScript)
-│   ├── src/
-│   │   ├── components/        # Reusable UI components
-│   │   ├── pages/             # Route pages
-│   │   ├── services/api.ts    # API client (axios)
-│   │   ├── store/             # Zustand state
-│   │   ├── hooks/             # Custom React hooks
-│   │   └── types/             # TypeScript types
-│   ├── nginx.conf             # Frontend nginx config
-│   └── Dockerfile
-│
-├── gateway/
-│   └── nginx.conf             # API gateway routing + rate limiting
-│
-├── services/
-│   ├── auth/                  # Auth Service (Node.js)
-│   ├── item/                  # Item Service (Node.js)
-│   ├── search/                # Search Service (Node.js)
-│   ├── image/                 # Image Service (Node.js)
-│   ├── admin/                 # Admin Service (Node.js)
-│   ├── matching/              # Matching Service (Python)
-│   ├── notification/          # Notification Service (Python)
-│   └── shared/                # Shared message broker abstractions
-│
-├── localstack-init/           # S3 bucket creation script
-├── docs/                      # Architecture documentation
-├── tests/                     # End-to-end tests
-├── docker-compose.yml         # Local orchestration
-└── .env.example               # Environment variables template
-```
+## Branches
 
-## Environment Variables
-
-All configuration is in `.env`. Key variables:
-
-| Variable | Used By | Description |
-|----------|---------|-------------|
-| `JWT_SECRET` | Auth, Item, Admin | Secret key for signing JWT tokens |
-| `AUTH_DATABASE_URL` | Auth | PostgreSQL connection string |
-| `ITEM_DATABASE_URL` | Item, Admin, Matching | PostgreSQL connection string |
-| `MATCHING_DATABASE_URL` | Matching, Admin | PostgreSQL connection string |
-| `ADMIN_DATABASE_URL` | Admin | PostgreSQL connection string |
-| `RABBITMQ_URL` | Item, Search, Matching, Notification | AMQP connection string |
-| `REDIS_URL` | Matching | Redis connection string |
-| `OPENSEARCH_URL` | Search | OpenSearch endpoint |
-| `S3_ENDPOINT` | Image | S3-compatible endpoint (LocalStack locally) |
-| `S3_BUCKET` | Image | Bucket name for image storage |
-| `SMTP_HOST/PORT` | Auth, Notification | SMTP server for sending emails |
-| `AUTH_SERVICE_URL` | Notification | Internal URL to fetch user details |
-| `MATCH_THRESHOLD` | Matching | Minimum score to create a match (default: 0.5) |
-
-## API Endpoints
-
-### Auth (`/api/auth`)
-- `POST /api/auth/register` — Create account
-- `POST /api/auth/login` — Login, returns JWT
-- `POST /api/auth/password-reset/request` — Request password reset
-- `POST /api/auth/password-reset/confirm` — Confirm password reset
-
-### Items (`/api/items`)
-- `POST /api/items/lost` — Report a lost item
-- `POST /api/items/found` — Report a found item
-- `GET /api/items/:id` — Get item details + matches
-- `PUT /api/items/:id` — Update an item
-- `DELETE /api/items/:id` — Delete an item
-- `GET /api/items/my` — Get current user's items
-- `POST /api/items/:id/claim` — Claim an item
-- `GET /api/items/claims/my` — Get current user's claims
-- `GET /api/items/claims/pending` — Get pending claims
-- `PUT /api/items/claims/:id` — Approve/reject a claim
-
-### Search (`/api/search`)
-- `GET /api/search/items` — Full-text search with filters
-
-### Images (`/api/images`)
-- `POST /api/images/upload` — Upload an image (multipart)
-- `DELETE /api/images/:id` — Delete an image
-
-### Admin (`/api/admin`)
-- `GET /api/admin/dashboard` — Stats (users, items, matches, claims)
-- `GET /api/admin/users` — Search users
-- `PUT /api/admin/users/:id/deactivate` — Deactivate a user
-- `DELETE /api/admin/items/:id` — Delete any item
-- `GET /api/admin/claims` — Get all pending claims
-
-## Testing
-
-```bash
-# Node.js services (from each service directory)
-npm test
-
-# Python services (from each service directory)
-pytest
-
-# Frontend
-cd frontend && npm run test:run
-```
-
-## Stopping
-
-```bash
-# Stop all services
-docker compose down
-
-# Stop and remove all data (databases, search index, etc.)
-docker compose down -v
-```
+- `main` — Application code + local docker-compose setup
+- `ecs-deployment` — ECS on EC2 Terraform infrastructure (this branch)
+- `serverless` — Lambda + API Gateway (coming next)

@@ -10,6 +10,7 @@
     "test:run": "jest --runInBand --forceExit"
   },
   "dependencies": {
+    "@aws-sdk/client-sqs": "^3.1037.0",
     "@opensearch-project/opensearch": "^2.6.0",
     "amqplib": "^0.10.4",
     "express": "^4.19.2",

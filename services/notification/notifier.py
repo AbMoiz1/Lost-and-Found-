@@ -17,10 +17,24 @@ SMTP_PORT = int(os.getenv("SMTP_PORT", "1025"))
 SMTP_USERNAME = os.getenv("SMTP_USERNAME", "")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 FROM_EMAIL = os.getenv("FROM_EMAIL", "noreply@lostandfound.local")
+USE_SES = bool(os.getenv("AWS_REGION")) and not os.getenv("SMTP_HOST")
 
 
 async def send_email(to_email: str, subject: str, message: str) -> None:
-    """Send an email via SMTP."""
+    """Send an email via SES (AWS) or SMTP (local)."""
+    if USE_SES:
+        import boto3
+        ses = boto3.client("ses", region_name=os.getenv("AWS_REGION", "us-east-1"))
+        ses.send_email(
+            Source=FROM_EMAIL,
+            Destination={"ToAddresses": [to_email]},
+            Message={
+                "Subject": {"Data": subject},
+                "Body": {"Text": {"Data": message}},
+            },
+        )
+        return
+
     msg = MIMEMultipart()
     msg["From"] = FROM_EMAIL
     msg["To"] = to_email
