@@ -10,14 +10,19 @@ A microservices-based web application deployed on AWS using ECS on EC2, Terrafor
 
 ## ECS Cluster Running
 <img width="1896" height="858" alt="image" src="https://github.com/user-attachments/assets/a29b0c62-2b49-49c7-8e15-9e73f3084eef" />
+
 ## Login
 <img width="1897" height="970" alt="image" src="https://github.com/user-attachments/assets/407b6890-b115-422d-a811-c35de495a97c" />
+
 ## Home Page
 <img width="1902" height="966" alt="image" src="https://github.com/user-attachments/assets/adadc9a5-9b3e-4170-a4ed-c846eef9e5d4" />
+
 ## Dashboard
 <img width="1897" height="969" alt="image" src="https://github.com/user-attachments/assets/47757753-9cf1-400b-b4a2-f9c5cd248820" />
+
 ## Report Lost Item 
 <img width="1894" height="963" alt="image" src="https://github.com/user-attachments/assets/36c66105-fca0-4f60-993c-cb9631a6cd18" />
+
 ## Report Found Item
 <img width="1893" height="964" alt="image" src="https://github.com/user-attachments/assets/46b5b50c-dc8d-4bae-b4d4-99b91bdf6dee" />
 
