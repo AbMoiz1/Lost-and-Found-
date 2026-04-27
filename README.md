@@ -11,20 +11,24 @@ A microservices-based web application deployed on AWS using ECS on EC2, Terrafor
 ## ECS Cluster Running
 <img width="1896" height="858" alt="image" src="https://github.com/user-attachments/assets/a29b0c62-2b49-49c7-8e15-9e73f3084eef" />
 
+## Registration
+<img width="1896" height="1025" alt="image" src="https://github.com/user-attachments/assets/7bbd0a8b-68fb-4d03-9ce3-f439ec8806ee" />
+
 ## Login
-<img width="1897" height="970" alt="image" src="https://github.com/user-attachments/assets/407b6890-b115-422d-a811-c35de495a97c" />
+<img width="1919" height="1028" alt="image" src="https://github.com/user-attachments/assets/87deda36-c27d-48e1-aeed-e05efd6989e9" />
 
 ## Home Page
-<img width="1902" height="966" alt="image" src="https://github.com/user-attachments/assets/adadc9a5-9b3e-4170-a4ed-c846eef9e5d4" />
+<img width="1897" height="1042" alt="image" src="https://github.com/user-attachments/assets/80b9626c-c875-4235-907c-69214ab3a746" />
 
 ## Dashboard
-<img width="1897" height="969" alt="image" src="https://github.com/user-attachments/assets/47757753-9cf1-400b-b4a2-f9c5cd248820" />
+<img width="1903" height="1021" alt="image" src="https://github.com/user-attachments/assets/cb5384cf-6880-40f8-a18c-1986d1b2ee17" />
 
 ## Report Lost Item 
-<img width="1894" height="963" alt="image" src="https://github.com/user-attachments/assets/36c66105-fca0-4f60-993c-cb9631a6cd18" />
+<img width="1898" height="1032" alt="image" src="https://github.com/user-attachments/assets/9d074b74-a63f-43f4-a6ab-b57f8a50a8e5" />
 
 ## Report Found Item
-<img width="1893" height="964" alt="image" src="https://github.com/user-attachments/assets/46b5b50c-dc8d-4bae-b4d4-99b91bdf6dee" />
+<img width="1900" height="1024" alt="image" src="https://github.com/user-attachments/assets/07a6d4ff-7afc-4791-98e7-e76bf045586c" />
+
 
 
 
