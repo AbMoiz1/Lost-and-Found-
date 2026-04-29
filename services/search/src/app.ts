@@ -8,6 +8,9 @@ app.use(express.json());
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
+app.get('/api/search/health', (_req, res) => {
+  res.json({ status: 'ok' });
+});
 
 app.use('/api/search', searchRouter);
 

@@ -9,6 +9,9 @@ app.use(express.json());
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'admin' });
 });
+app.get('/api/admin/health', (req, res) => {
+  res.json({ status: 'ok', service: 'admin' });
+});
 
 // Admin routes
 app.use('/api/admin', adminRoutes);

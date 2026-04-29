@@ -9,6 +9,9 @@ app.use(express.json());
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
+app.get('/api/items/health', (_req, res) => {
+  res.json({ status: 'ok' });
+});
 
 // Claims router must be mounted before items router so that
 // /api/items/claims/:claimId is matched before /api/items/:id
