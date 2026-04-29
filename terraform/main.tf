@@ -61,6 +61,12 @@ module "lambda" {
   opensearch_endpoint       = module.opensearch.collection_endpoint
   opensearch_collection_arn = module.opensearch.collection_arn
   redis_endpoint            = module.elasticache.endpoint
+  db_username               = "dbadmin"
+  db_password               = var.db_master_password
+  jwt_secret                = module.secrets.jwt_secret_value
+  aurora_vpc_id             = module.aurora.vpc_id
+  aurora_subnet_ids         = module.aurora.subnet_ids
+  aurora_security_group_id  = module.aurora.security_group_id
 }
 
 # ── Module 8: OpenSearch Serverless ──────────────────────────────────────────

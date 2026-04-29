@@ -13,3 +13,15 @@ variable "images_bucket_name" { type = string }
 variable "opensearch_endpoint" { type = string }
 variable "opensearch_collection_arn" { type = string }
 variable "redis_endpoint" { type = string }
+variable "db_username" { type = string }
+variable "db_password" {
+  type      = string
+  sensitive = true
+}
+variable "jwt_secret" {
+  type      = string
+  sensitive = true
+}
+variable "aurora_vpc_id" { type = string }
+variable "aurora_subnet_ids" { type = list(string) }
+variable "aurora_security_group_id" { type = string }

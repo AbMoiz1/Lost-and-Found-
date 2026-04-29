@@ -17,3 +17,8 @@ output "all_secret_arns" {
     aws_secretsmanager_secret.opensearch_credentials.arn
   ]
 }
+
+output "jwt_secret_value" {
+  value     = random_password.jwt_secret.result
+  sensitive = true
+}

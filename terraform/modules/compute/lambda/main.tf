@@ -1,9 +1,6 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # Lambda Functions — Replaces ECS on EC2 (8 containers → 8 Lambda functions)
 # ─────────────────────────────────────────────────────────────────────────────
-# 5 HTTP functions (behind API Gateway): auth, item, search, image, admin
-# 3 event-driven workers (triggered by SQS): search-indexer, matching, notification
-# ─────────────────────────────────────────────────────────────────────────────
 
 data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
@@ -19,7 +16,34 @@ data "archive_file" "placeholder" {
   }
 }
 
-# ── Shared IAM execution role for all Lambda functions ───────────────────────
+# ── Lambda Security Group (in Aurora VPC) ────────────────────────────────────
+
+resource "aws_security_group" "lambda" {
+  name        = "${var.project}-lambda-sg"
+  description = "Lambda functions"
+  vpc_id      = var.aurora_vpc_id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = { Name = "${var.project}-lambda-sg" }
+}
+
+# Allow Lambda SG to reach Aurora SG on port 5432
+resource "aws_security_group_rule" "lambda_to_aurora" {
+  type                     = "ingress"
+  from_port                = 5432
+  to_port                  = 5432
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.lambda.id
+  security_group_id        = var.aurora_security_group_id
+}
+
+# ── Shared IAM execution role ────────────────────────────────────────────────
 
 resource "aws_iam_role" "lambda_execution" {
   name = "${var.project}-lambda-execution"
@@ -39,6 +63,12 @@ resource "aws_iam_role" "lambda_execution" {
 resource "aws_iam_role_policy_attachment" "lambda_basic" {
   role       = aws_iam_role.lambda_execution.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+# VPC access for Lambda (needed to reach Aurora in private VPC)
+resource "aws_iam_role_policy_attachment" "lambda_vpc" {
+  role       = aws_iam_role.lambda_execution.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }
 
 resource "aws_iam_role_policy" "lambda_permissions" {

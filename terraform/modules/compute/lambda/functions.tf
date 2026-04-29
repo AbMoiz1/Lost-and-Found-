@@ -12,6 +12,14 @@ locals {
     IMAGES_BUCKET       = var.images_bucket_name
     OPENSEARCH_ENDPOINT = var.opensearch_endpoint
     REDIS_ENDPOINT      = var.redis_endpoint
+    DATABASE_URL        = "postgresql://${var.db_username}:${var.db_password}@${var.aurora_endpoint}:5432/auth_db"
+    ITEM_DATABASE_URL   = "postgresql://${var.db_username}:${var.db_password}@${var.aurora_endpoint}:5432/auth_db"
+    JWT_SECRET          = var.jwt_secret
+  }
+
+  vpc_config = {
+    subnet_ids         = var.aurora_subnet_ids
+    security_group_ids = [aws_security_group.lambda.id]
   }
 }
 
@@ -24,9 +32,13 @@ resource "aws_lambda_function" "auth" {
   memory_size   = 256
   filename      = data.archive_file.placeholder.output_path
 
+  vpc_config {
+    subnet_ids         = local.vpc_config.subnet_ids
+    security_group_ids = local.vpc_config.security_group_ids
+  }
+
   environment { variables = local.common_env }
   tags = { Name = "${var.project}-auth", Service = "auth" }
-
   lifecycle { ignore_changes = [filename, source_code_hash] }
 }
 
@@ -39,9 +51,13 @@ resource "aws_lambda_function" "item" {
   memory_size   = 256
   filename      = data.archive_file.placeholder.output_path
 
+  vpc_config {
+    subnet_ids         = local.vpc_config.subnet_ids
+    security_group_ids = local.vpc_config.security_group_ids
+  }
+
   environment { variables = local.common_env }
   tags = { Name = "${var.project}-item", Service = "item" }
-
   lifecycle { ignore_changes = [filename, source_code_hash] }
 }
 
@@ -54,9 +70,13 @@ resource "aws_lambda_function" "search" {
   memory_size   = 256
   filename      = data.archive_file.placeholder.output_path
 
+  vpc_config {
+    subnet_ids         = local.vpc_config.subnet_ids
+    security_group_ids = local.vpc_config.security_group_ids
+  }
+
   environment { variables = local.common_env }
   tags = { Name = "${var.project}-search", Service = "search" }
-
   lifecycle { ignore_changes = [filename, source_code_hash] }
 }
 
@@ -69,9 +89,13 @@ resource "aws_lambda_function" "image" {
   memory_size   = 512
   filename      = data.archive_file.placeholder.output_path
 
+  vpc_config {
+    subnet_ids         = local.vpc_config.subnet_ids
+    security_group_ids = local.vpc_config.security_group_ids
+  }
+
   environment { variables = local.common_env }
   tags = { Name = "${var.project}-image", Service = "image" }
-
   lifecycle { ignore_changes = [filename, source_code_hash] }
 }
 
@@ -84,9 +108,13 @@ resource "aws_lambda_function" "admin" {
   memory_size   = 256
   filename      = data.archive_file.placeholder.output_path
 
+  vpc_config {
+    subnet_ids         = local.vpc_config.subnet_ids
+    security_group_ids = local.vpc_config.security_group_ids
+  }
+
   environment { variables = local.common_env }
   tags = { Name = "${var.project}-admin", Service = "admin" }
-
   lifecycle { ignore_changes = [filename, source_code_hash] }
 }
 
@@ -103,9 +131,13 @@ resource "aws_lambda_function" "search_indexer" {
   memory_size   = 256
   filename      = data.archive_file.placeholder.output_path
 
+  vpc_config {
+    subnet_ids         = local.vpc_config.subnet_ids
+    security_group_ids = local.vpc_config.security_group_ids
+  }
+
   environment { variables = local.common_env }
   tags = { Name = "${var.project}-search-indexer", Service = "search-indexer" }
-
   lifecycle { ignore_changes = [filename, source_code_hash] }
 }
 
@@ -118,9 +150,13 @@ resource "aws_lambda_function" "matching" {
   memory_size   = 512
   filename      = data.archive_file.placeholder.output_path
 
+  vpc_config {
+    subnet_ids         = local.vpc_config.subnet_ids
+    security_group_ids = local.vpc_config.security_group_ids
+  }
+
   environment { variables = local.common_env }
   tags = { Name = "${var.project}-matching", Service = "matching" }
-
   lifecycle { ignore_changes = [filename, source_code_hash] }
 }
 
@@ -133,13 +169,17 @@ resource "aws_lambda_function" "notification" {
   memory_size   = 256
   filename      = data.archive_file.placeholder.output_path
 
+  vpc_config {
+    subnet_ids         = local.vpc_config.subnet_ids
+    security_group_ids = local.vpc_config.security_group_ids
+  }
+
   environment { variables = local.common_env }
   tags = { Name = "${var.project}-notification", Service = "notification" }
-
   lifecycle { ignore_changes = [filename, source_code_hash] }
 }
 
-# ── SQS Event Source Mappings (triggers for worker Lambdas) ──────────────────
+# ── SQS Event Source Mappings ────────────────────────────────────────────────
 
 resource "aws_lambda_event_source_mapping" "search_indexer" {
   event_source_arn = var.search_queue_arn

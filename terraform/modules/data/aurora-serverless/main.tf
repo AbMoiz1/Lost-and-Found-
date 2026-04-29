@@ -96,3 +96,60 @@ resource "aws_rds_cluster_instance" "reader" {
   engine_version     = aws_rds_cluster.main.engine_version
   tags               = { Name = "${var.project}-aurora-reader" }
 }
+
+# ── NAT Gateway for Lambda VPC access to AWS services ────────────────────────
+# Lambda in VPC can reach Aurora, but needs NAT to reach SNS/SQS/S3/SES/etc.
+
+resource "aws_internet_gateway" "aurora" {
+  vpc_id = aws_vpc.aurora.id
+  tags   = { Name = "${var.project}-aurora-igw" }
+}
+
+resource "aws_eip" "nat" {
+  domain = "vpc"
+  tags   = { Name = "${var.project}-aurora-nat-eip" }
+}
+
+resource "aws_subnet" "public" {
+  vpc_id                  = aws_vpc.aurora.id
+  cidr_block              = cidrsubnet("10.99.0.0/16", 8, 10)
+  availability_zone       = data.aws_availability_zones.available.names[0]
+  map_public_ip_on_launch = true
+  tags                    = { Name = "${var.project}-aurora-public-subnet" }
+}
+
+resource "aws_nat_gateway" "main" {
+  allocation_id = aws_eip.nat.id
+  subnet_id     = aws_subnet.public.id
+  tags          = { Name = "${var.project}-aurora-nat" }
+  depends_on    = [aws_internet_gateway.aurora]
+}
+
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.aurora.id
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.aurora.id
+  }
+  tags = { Name = "${var.project}-aurora-public-rt" }
+}
+
+resource "aws_route_table_association" "public" {
+  subnet_id      = aws_subnet.public.id
+  route_table_id = aws_route_table.public.id
+}
+
+resource "aws_route_table" "private" {
+  vpc_id = aws_vpc.aurora.id
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.main.id
+  }
+  tags = { Name = "${var.project}-aurora-private-rt" }
+}
+
+resource "aws_route_table_association" "private" {
+  count          = 2
+  subnet_id      = aws_subnet.aurora[count.index].id
+  route_table_id = aws_route_table.private.id
+}
