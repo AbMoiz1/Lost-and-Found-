@@ -12,8 +12,12 @@ locals {
     IMAGES_BUCKET       = var.images_bucket_name
     OPENSEARCH_ENDPOINT = var.opensearch_endpoint
     REDIS_ENDPOINT      = var.redis_endpoint
-    DATABASE_URL        = "postgresql://${var.db_username}:${var.db_password}@${var.aurora_endpoint}:5432/auth_db"
-    ITEM_DATABASE_URL   = "postgresql://${var.db_username}:${var.db_password}@${var.aurora_endpoint}:5432/auth_db"
+    PGHOST              = var.aurora_endpoint
+    PGPORT              = "5432"
+    PGUSER              = var.db_username
+    PGPASSWORD          = var.db_password
+    PGDATABASE          = "auth_db"
+    ITEM_DATABASE_URL   = "postgresql://${var.db_username}:${urlencode(var.db_password)}@${var.aurora_endpoint}:5432/auth_db"
     JWT_SECRET          = var.jwt_secret
   }
 

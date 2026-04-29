@@ -1,23 +1,30 @@
 import { Pool } from 'pg';
 
-// Admin service database (for admin-specific data)
-const adminPool = new Pool({
-  connectionString: process.env.ADMIN_DATABASE_URL || 'postgresql://admin_user:admin_pass@postgres-admin:5432/admin_db',
-});
+// In Lambda, all pools connect to the same Aurora cluster using PGHOST/PGUSER/etc env vars.
+// Locally, each pool uses a separate DATABASE_URL.
 
-// Auth service database (for user data)
-const authPool = new Pool({
-  connectionString: process.env.AUTH_DATABASE_URL || 'postgresql://auth_user:auth_pass@postgres-auth:5432/auth_db',
-});
+const adminPool = new Pool(
+  process.env.ADMIN_DATABASE_URL
+    ? { connectionString: process.env.ADMIN_DATABASE_URL }
+    : undefined
+);
 
-// Item service database (for items and claims data)
-const itemPool = new Pool({
-  connectionString: process.env.ITEM_DATABASE_URL || 'postgresql://item_user:item_pass@postgres-item:5432/item_db',
-});
+const authPool = new Pool(
+  process.env.AUTH_DATABASE_URL
+    ? { connectionString: process.env.AUTH_DATABASE_URL }
+    : undefined
+);
 
-// Matching service database (for matches data)
-const matchingPool = new Pool({
-  connectionString: process.env.MATCHING_DATABASE_URL || 'postgresql://match_user:match_pass@postgres-matching:5432/matching_db',
-});
+const itemPool = new Pool(
+  process.env.ITEM_DATABASE_URL
+    ? { connectionString: process.env.ITEM_DATABASE_URL }
+    : undefined
+);
 
-export { adminPool as pool, authPool, itemPool, matchingPool };
+const matchingPool = new Pool(
+  process.env.MATCHING_DATABASE_URL
+    ? { connectionString: process.env.MATCHING_DATABASE_URL }
+    : undefined
+);
+
+export { adminPool, authPool, itemPool, matchingPool };
