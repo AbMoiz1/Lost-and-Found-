@@ -26,6 +26,8 @@ resource "aws_lambda_function" "auth" {
 
   environment { variables = local.common_env }
   tags = { Name = "${var.project}-auth", Service = "auth" }
+
+  lifecycle { ignore_changes = [filename, source_code_hash] }
 }
 
 resource "aws_lambda_function" "item" {
@@ -39,6 +41,8 @@ resource "aws_lambda_function" "item" {
 
   environment { variables = local.common_env }
   tags = { Name = "${var.project}-item", Service = "item" }
+
+  lifecycle { ignore_changes = [filename, source_code_hash] }
 }
 
 resource "aws_lambda_function" "search" {
@@ -52,6 +56,8 @@ resource "aws_lambda_function" "search" {
 
   environment { variables = local.common_env }
   tags = { Name = "${var.project}-search", Service = "search" }
+
+  lifecycle { ignore_changes = [filename, source_code_hash] }
 }
 
 resource "aws_lambda_function" "image" {
@@ -65,6 +71,8 @@ resource "aws_lambda_function" "image" {
 
   environment { variables = local.common_env }
   tags = { Name = "${var.project}-image", Service = "image" }
+
+  lifecycle { ignore_changes = [filename, source_code_hash] }
 }
 
 resource "aws_lambda_function" "admin" {
@@ -78,6 +86,8 @@ resource "aws_lambda_function" "admin" {
 
   environment { variables = local.common_env }
   tags = { Name = "${var.project}-admin", Service = "admin" }
+
+  lifecycle { ignore_changes = [filename, source_code_hash] }
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -95,6 +105,8 @@ resource "aws_lambda_function" "search_indexer" {
 
   environment { variables = local.common_env }
   tags = { Name = "${var.project}-search-indexer", Service = "search-indexer" }
+
+  lifecycle { ignore_changes = [filename, source_code_hash] }
 }
 
 resource "aws_lambda_function" "matching" {
@@ -108,6 +120,8 @@ resource "aws_lambda_function" "matching" {
 
   environment { variables = local.common_env }
   tags = { Name = "${var.project}-matching", Service = "matching" }
+
+  lifecycle { ignore_changes = [filename, source_code_hash] }
 }
 
 resource "aws_lambda_function" "notification" {
@@ -121,6 +135,8 @@ resource "aws_lambda_function" "notification" {
 
   environment { variables = local.common_env }
   tags = { Name = "${var.project}-notification", Service = "notification" }
+
+  lifecycle { ignore_changes = [filename, source_code_hash] }
 }
 
 # ── SQS Event Source Mappings (triggers for worker Lambdas) ──────────────────
