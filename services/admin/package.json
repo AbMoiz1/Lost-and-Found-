@@ -4,12 +4,14 @@
   "private": true,
   "scripts": {
     "build": "tsc",
+    "build:lambda": "tsc && cp package.json dist/ && cp package-lock.json dist/ 2>nul || true",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "test": "jest --runInBand",
     "test:run": "jest --runInBand --forceExit"
   },
   "dependencies": {
+    "@vendia/serverless-express": "^4.12.6",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.11.5",

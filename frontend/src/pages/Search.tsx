@@ -47,18 +47,17 @@ const Search: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Search Items</h1>
+    <div style={{ minHeight: '100vh', background: 'var(--gray-50)', padding: '2rem 1.5rem' }}>
+      <div style={{ maxWidth: '80rem', margin: '0 auto' }}>
+        <h1 className="fade-in-up" style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--gray-900)', marginBottom: '1.5rem' }}>
+          Search Items
+        </h1>
 
         {/* Filters */}
-        <form onSubmit={handleSearch} className="card p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <input
-              type="text" placeholder="Search by keyword..."
-              className="input" value={filters.q || ''}
-              onChange={e => setFilters(f => ({ ...f, q: e.target.value }))}
-            />
+        <form onSubmit={handleSearch} className="card-static fade-in-up delay-1" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem', marginBottom: '0.75rem' }}>
+            <input type="text" placeholder="Search by keyword..." className="input"
+              value={filters.q || ''} onChange={e => setFilters(f => ({ ...f, q: e.target.value }))} />
             <select className="input" value={filters.category || ''}
               onChange={e => setFilters(f => ({ ...f, category: e.target.value }))}>
               <option value="">All Categories</option>
@@ -71,50 +70,52 @@ const Search: React.FC = () => {
               <option value="found">Found Items</option>
             </select>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
             <input type="text" placeholder="Location..." className="input"
-              value={filters.location || ''}
-              onChange={e => setFilters(f => ({ ...f, location: e.target.value }))} />
+              value={filters.location || ''} onChange={e => setFilters(f => ({ ...f, location: e.target.value }))} />
             <input type="date" className="input" value={filters.from || ''}
               onChange={e => setFilters(f => ({ ...f, from: e.target.value }))} />
             <input type="date" className="input" value={filters.to || ''}
               onChange={e => setFilters(f => ({ ...f, to: e.target.value }))} />
           </div>
-          <div className="flex gap-4">
-            <button type="submit" className="btn-primary">Search</button>
-            <button type="button" onClick={clearFilters} className="btn-ghost">Clear Filters</button>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <button type="submit" className="btn btn-primary">Search</button>
+            <button type="button" onClick={clearFilters} className="btn btn-ghost">Clear Filters</button>
           </div>
         </form>
 
         {/* Results */}
         {isLoading ? (
-          <div className="flex justify-center py-12"><LoadingSpinner size="lg" /></div>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem 0' }}><LoadingSpinner size="lg" /></div>
         ) : error ? (
-          <div className="text-center py-12"><p className="text-red-600">Error loading items.</p></div>
+          <div style={{ textAlign: 'center', padding: '3rem 0' }}><p style={{ color: '#dc2626' }}>Error loading items.</p></div>
         ) : items.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 text-lg">No items found. Try adjusting your filters.</p>
+          <div className="fade-in-up" style={{ textAlign: 'center', padding: '3rem 0' }}>
+            <p style={{ color: 'var(--gray-500)', fontSize: '1.1rem' }}>No items found. Try adjusting your filters.</p>
           </div>
         ) : (
           <>
-            <p className="text-sm text-gray-500 mb-4">{items.length} item(s) found</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {items.map((item: Item) => (
+            <p className="fade-in" style={{ fontSize: '0.85rem', color: 'var(--gray-500)', marginBottom: '1rem' }}>{items.length} item(s) found</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+              {items.map((item: Item, i: number) => (
                 <Link key={item.id} to={`/items/${item.id}`}
-                  className="card p-6 hover:shadow-xl transition-all duration-200">
-                  <div className="flex items-start justify-between mb-4">
+                  className={`card fade-in-up delay-${Math.min(i % 6 + 1, 5)}`}
+                  style={{ padding: '1.5rem', textDecoration: 'none', color: 'inherit' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
                     <span className={`badge ${item.type === 'lost' ? 'badge-error' : 'badge-success'}`}>
                       {item.type === 'lost' ? 'Lost' : 'Found'}
                     </span>
-                    <span className="text-sm text-gray-500">{formatDate(item.date)}</span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--gray-400)' }}>{formatDate(item.date)}</span>
                   </div>
                   {item.thumbnailUrl && (
                     <img src={item.thumbnailUrl} alt={item.title}
-                      className="w-full h-48 object-cover rounded-lg mb-4" />
+                      style={{ width: '100%', height: '12rem', objectFit: 'cover', borderRadius: '0.5rem', marginBottom: '0.75rem' }} />
                   )}
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.title}</h3>
-                  <p className="text-gray-600 mb-4">{truncateText(item.description, 100)}</p>
-                  <div className="flex items-center justify-between text-sm text-gray-500">
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--gray-900)', marginBottom: '0.4rem' }}>{item.title}</h3>
+                  <p style={{ color: 'var(--gray-500)', fontSize: '0.875rem', marginBottom: '0.75rem', lineHeight: 1.5 }}>
+                    {truncateText(item.description, 100)}
+                  </p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--gray-400)' }}>
                     <span>{item.category}</span>
                     <span>{item.location}</span>
                   </div>

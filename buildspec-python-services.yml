@@ -1,0 +1,35 @@
+version: 0.2
+
+env:
+  variables:
+    PROJECT: moiz-lost-and-found
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.12
+
+  build:
+    commands:
+      - |
+        for SERVICE in matching notification; do
+          echo "=== Building $SERVICE ==="
+          cd services/$SERVICE
+          mkdir -p package
+          pip install -r requirements.txt -t package/
+          cp *.py package/
+          cd package
+          zip -qr ../lambda.zip .
+          cd ..
+          
+          echo "=== Deploying $SERVICE ==="
+          aws lambda update-function-code \
+            --function-name ${PROJECT}-${SERVICE} \
+            --zip-file fileb://lambda.zip
+          aws lambda update-function-configuration \
+            --function-name ${PROJECT}-${SERVICE} \
+            --handler lambda_handler.handler
+          
+          rm -rf package lambda.zip
+          cd ../..
+        done

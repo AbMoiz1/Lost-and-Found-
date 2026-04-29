@@ -1,0 +1,29 @@
+version: 0.2
+
+env:
+  variables:
+    PROJECT: moiz-lost-and-found
+    FRONTEND_BUCKET: moiz-lost-and-found-frontend-dev
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+
+  build:
+    commands:
+      - echo "=== Building frontend ==="
+      - cd frontend
+      - npm ci
+      - npm run build
+
+  post_build:
+    commands:
+      - echo "=== Deploying to S3 ==="
+      - aws s3 sync dist s3://${FRONTEND_BUCKET} --delete
+      - echo "=== Invalidating CloudFront ==="
+      - |
+        DIST_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?Comment=='${PROJECT} distribution'].Id" --output text)
+        if [ -n "$DIST_ID" ]; then
+          aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/*"
+        fi

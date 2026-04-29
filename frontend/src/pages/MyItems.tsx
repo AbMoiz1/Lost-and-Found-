@@ -19,55 +19,57 @@ const MyItems: React.FC = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['myItems'] }),
   });
 
-  if (isLoading) return <div className="flex justify-center py-20"><LoadingSpinner size="lg" /></div>;
+  if (isLoading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '5rem 0' }}><LoadingSpinner size="lg" /></div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">My Items</h1>
-          <div className="flex gap-2">
-            <Link to="/items/lost/new" className="btn-primary">Report Lost</Link>
-            <Link to="/items/found/new" className="btn-secondary">Report Found</Link>
+    <div style={{ minHeight: '100vh', background: 'var(--gray-50)', padding: '2rem 1.5rem' }}>
+      <div style={{ maxWidth: '56rem', margin: '0 auto' }}>
+        <div className="fade-in-up" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <h1 style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--gray-900)' }}>My Items</h1>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <Link to="/items/lost/new" className="btn btn-primary">Report Lost</Link>
+            <Link to="/items/found/new" className="btn btn-secondary">Report Found</Link>
           </div>
         </div>
 
         {error ? (
-          <p className="text-red-600">Error loading your items.</p>
+          <p style={{ color: '#dc2626' }}>Error loading your items.</p>
         ) : items.length === 0 ? (
-          <div className="card p-12 text-center">
-            <p className="text-gray-500 text-lg mb-4">You haven't reported any items yet.</p>
-            <Link to="/items/lost/new" className="btn-primary">Report Your First Item</Link>
+          <div className="card-static fade-in-up delay-1" style={{ padding: '3rem', textAlign: 'center' }}>
+            <p style={{ color: 'var(--gray-500)', fontSize: '1.1rem', marginBottom: '1rem' }}>You haven't reported any items yet.</p>
+            <Link to="/items/lost/new" className="btn btn-primary">Report Your First Item</Link>
           </div>
         ) : (
-          <div className="space-y-4">
-            {items.map((item: Item) => (
-              <div key={item.id} className="card p-6 flex items-center justify-between">
-                <div className="flex items-center gap-4 flex-1">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {items.map((item: Item, i: number) => (
+              <div key={item.id} className={`card fade-in-up delay-${Math.min(i + 1, 5)}`}
+                style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: 0 }}>
                   {item.thumbnailUrl && (
-                    <img src={item.thumbnailUrl} alt={item.title} className="w-16 h-16 object-cover rounded-lg" />
+                    <img src={item.thumbnailUrl} alt={item.title}
+                      style={{ width: '4rem', height: '4rem', objectFit: 'cover', borderRadius: '0.5rem', flexShrink: 0 }} />
                   )}
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`badge ${item.type === 'lost' ? 'badge-error' : 'badge-success'}`}>
-                        {item.type}
-                      </span>
-                      <span className={`badge ${item.status === 'active' ? 'badge-info' : 'badge-warning'}`}>
-                        {item.status}
-                      </span>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.3rem', flexWrap: 'wrap' }}>
+                      <span className={`badge ${item.type === 'lost' ? 'badge-error' : 'badge-success'}`}>{item.type}</span>
+                      <span className={`badge ${item.status === 'active' ? 'badge-info' : 'badge-warning'}`}>{item.status}</span>
                     </div>
-                    <Link to={`/items/${item.id}`} className="text-lg font-semibold text-gray-900 hover:text-orange-600">
+                    <Link to={`/items/${item.id}`} style={{
+                      fontSize: '1.05rem', fontWeight: 600, color: 'var(--gray-900)', textDecoration: 'none',
+                      display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}
+                      onMouseEnter={e => (e.currentTarget.style.color = 'var(--orange-600)')}
+                      onMouseLeave={e => (e.currentTarget.style.color = 'var(--gray-900)')}>
                       {item.title}
                     </Link>
-                    <p className="text-sm text-gray-500">{item.category} · {item.location} · {formatDate(item.date)}</p>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--gray-400)' }}>{item.category} · {item.location} · {formatDate(item.date)}</p>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Link to={`/items/${item.id}`} className="btn-ghost text-sm">View</Link>
+                <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+                  <Link to={`/items/${item.id}`} className="btn btn-ghost" style={{ fontSize: '0.8rem' }}>View</Link>
                   {item.status === 'active' && (
-                    <button onClick={() => deleteMutation.mutate(item.id)}
-                      disabled={deleteMutation.isPending}
-                      className="btn-ghost text-sm text-red-600 hover:text-red-700">
+                    <button onClick={() => deleteMutation.mutate(item.id)} disabled={deleteMutation.isPending}
+                      className="btn btn-ghost" style={{ fontSize: '0.8rem', color: '#dc2626' }}>
                       Delete
                     </button>
                   )}

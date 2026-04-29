@@ -22,75 +22,91 @@ const ItemDetail: React.FC = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['item', id] }),
   });
 
-  if (isLoading) return <div className="flex justify-center py-20"><LoadingSpinner size="lg" /></div>;
+  if (isLoading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '5rem 0' }}><LoadingSpinner size="lg" /></div>;
   if (error || !item) return (
-    <div className="text-center py-20">
-      <p className="text-red-600 text-lg">Item not found.</p>
-      <Link to="/" className="text-orange-600 hover:text-orange-500 mt-4 inline-block">Back to home</Link>
+    <div className="fade-in-up" style={{ textAlign: 'center', padding: '5rem 1.5rem' }}>
+      <p style={{ color: '#dc2626', fontSize: '1.1rem', marginBottom: '1rem' }}>Item not found.</p>
+      <Link to="/" className="btn btn-primary">Back to home</Link>
     </div>
   );
 
   const isOwner = user?.id === item.ownerId;
   const canClaim = isAuthenticated && !isOwner && item.type === 'found' && item.status === 'active';
 
-  return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
-        <Link to="/" className="text-orange-600 hover:text-orange-500 text-sm mb-6 inline-block">&larr; Back to browse</Link>
+  const infoBox: React.CSSProperties = {
+    background: 'var(--gray-50)', borderRadius: 'var(--radius)', padding: '1rem',
+  };
 
-        <div className="card p-8">
-          <div className="flex items-start justify-between mb-6">
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--gray-50)', padding: '2rem 1.5rem' }}>
+      <div style={{ maxWidth: '56rem', margin: '0 auto' }}>
+        <Link to="/" className="fade-in" style={{
+          color: 'var(--orange-600)', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 500,
+          display: 'inline-block', marginBottom: '1.5rem',
+        }}>
+          &larr; Back to browse
+        </Link>
+
+        <div className="card-static fade-in-up delay-1" style={{ padding: '2rem' }}>
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
             <div>
-              <span className={`badge ${item.type === 'lost' ? 'badge-error' : 'badge-success'} mb-2`}>
+              <span className={`badge ${item.type === 'lost' ? 'badge-error' : 'badge-success'}`} style={{ marginBottom: '0.5rem' }}>
                 {item.type === 'lost' ? 'Lost' : 'Found'}
               </span>
-              <h1 className="text-3xl font-bold text-gray-900">{item.title}</h1>
+              <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--gray-900)' }}>{item.title}</h1>
             </div>
             <span className={`badge ${item.status === 'active' ? 'badge-info' : 'badge-warning'}`}>
               {item.status}
             </span>
           </div>
 
+          {/* Image */}
           {item.imageUrl && (
-            <img src={item.imageUrl} alt={item.title} className="w-full max-h-96 object-contain rounded-lg mb-6 bg-gray-100" />
+            <img src={item.imageUrl} alt={item.title} style={{
+              width: '100%', maxHeight: '24rem', objectFit: 'contain',
+              borderRadius: 'var(--radius)', marginBottom: '1.5rem', background: 'var(--gray-100)',
+            }} />
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-sm text-gray-500">Category</p>
-              <p className="font-medium text-gray-900">{item.category}</p>
+          {/* Info grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.75rem', marginBottom: '1.5rem' }}>
+            <div style={infoBox}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--gray-400)', marginBottom: '0.2rem' }}>Category</p>
+              <p style={{ fontWeight: 600, color: 'var(--gray-900)' }}>{item.category}</p>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-sm text-gray-500">Location</p>
-              <p className="font-medium text-gray-900">{item.location}</p>
+            <div style={infoBox}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--gray-400)', marginBottom: '0.2rem' }}>Location</p>
+              <p style={{ fontWeight: 600, color: 'var(--gray-900)' }}>{item.location}</p>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-sm text-gray-500">Date</p>
-              <p className="font-medium text-gray-900">{formatDate(item.date)}</p>
+            <div style={infoBox}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--gray-400)', marginBottom: '0.2rem' }}>Date</p>
+              <p style={{ fontWeight: 600, color: 'var(--gray-900)' }}>{formatDate(item.date)}</p>
             </div>
           </div>
 
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">Description</h2>
-            <p className="text-gray-700 leading-relaxed">{item.description}</p>
+          {/* Description */}
+          <div style={{ marginBottom: '1.5rem' }}>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--gray-900)', marginBottom: '0.5rem' }}>Description</h2>
+            <p style={{ color: 'var(--gray-600)', lineHeight: 1.7 }}>{item.description}</p>
           </div>
 
+          {/* Claim */}
           {canClaim && (
-            <div className="border-t border-gray-200 pt-6">
+            <div style={{ borderTop: '1px solid var(--gray-200)', paddingTop: '1.5rem' }}>
               {claimMutation.error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                  <p className="text-sm text-red-600">
+                <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 'var(--radius)', padding: '0.75rem 1rem', marginBottom: '1rem' }}>
+                  <p style={{ fontSize: '0.85rem', color: '#dc2626' }}>
                     {(claimMutation.error as any)?.response?.data?.error || 'Failed to submit claim.'}
                   </p>
                 </div>
               )}
               {claimMutation.isSuccess ? (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <p className="text-sm text-green-700">Claim submitted successfully! An admin will review it.</p>
+                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 'var(--radius)', padding: '1rem' }}>
+                  <p style={{ fontSize: '0.9rem', color: '#15803d' }}>Claim submitted successfully! An admin will review it.</p>
                 </div>
               ) : (
-                <button onClick={() => claimMutation.mutate()} disabled={claimMutation.isPending}
-                  className="btn-primary flex items-center">
+                <button onClick={() => claimMutation.mutate()} disabled={claimMutation.isPending} className="btn btn-primary">
                   {claimMutation.isPending ? <><LoadingSpinner size="sm" className="mr-2" />Claiming...</> : 'Claim This Item'}
                 </button>
               )}
@@ -100,22 +116,22 @@ const ItemDetail: React.FC = () => {
 
         {/* Matches */}
         {item.matches && item.matches.length > 0 && (
-          <div className="mt-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Potential Matches</h2>
-            <div className="space-y-4">
+          <div className="fade-in-up delay-2" style={{ marginTop: '2rem' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--gray-900)', marginBottom: '1rem' }}>Potential Matches</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {item.matches.map(match => (
                 <Link key={match.id} to={`/items/${item.type === 'lost' ? match.foundItemId : match.lostItemId}`}
-                  className="card p-4 flex items-center justify-between hover:shadow-lg transition-all">
+                  className="card" style={{ padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', textDecoration: 'none', color: 'inherit' }}>
                   <div>
-                    <span className="text-sm text-gray-500">Match Score</span>
-                    <div className="flex items-center gap-2">
-                      <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div className="h-full bg-orange-500 rounded-full" style={{ width: `${match.score * 100}%` }} />
+                    <span style={{ fontSize: '0.8rem', color: 'var(--gray-500)' }}>Match Score</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
+                      <div style={{ width: '6rem', height: '0.5rem', background: 'var(--gray-200)', borderRadius: '9999px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', background: 'var(--orange-500)', borderRadius: '9999px', width: `${match.score * 100}%` }} />
                       </div>
-                      <span className="text-sm font-medium">{(match.score * 100).toFixed(0)}%</span>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{(match.score * 100).toFixed(0)}%</span>
                     </div>
                   </div>
-                  <span className="text-orange-600 text-sm font-medium">View &rarr;</span>
+                  <span style={{ color: 'var(--orange-600)', fontSize: '0.85rem', fontWeight: 600 }}>View &rarr;</span>
                 </Link>
               ))}
             </div>

@@ -1,25 +1,15 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# Moiz Lost and Found Webapp — WAF Module
-# ─────────────────────────────────────────────────────────────────────────────
-# LOCAL EQUIVALENT: Nginx limit_req_zone (100 req/min per IP). That's it.
-# No SQL injection protection, no XSS protection, no bot blocking.
-#
-# SA EXAM NOTE:
-#   - WAF inspects HTTP content (Layer 7). Security Groups only check IP/port.
-#   - Managed rule groups: AWS maintains rules for OWASP Top 10 threats
-#   - Rate-based rules: block IPs exceeding request threshold
-#   - WAF can attach to ALB, CloudFront, or API Gateway
+# WAF — Updated for serverless (attaches to API Gateway stage instead of ALB)
 # ─────────────────────────────────────────────────────────────────────────────
 
 resource "aws_wafv2_web_acl" "main" {
   name  = "${var.project}-waf"
-  scope = "REGIONAL" # REGIONAL for ALB, CLOUDFRONT for CloudFront
+  scope = "REGIONAL"
 
   default_action {
     allow {}
   }
 
-  # ── AWS Managed Rules: Common Rule Set (OWASP Top 10) ──────────────────
   rule {
     name     = "AWSManagedRulesCommonRuleSet"
     priority = 1
@@ -42,7 +32,6 @@ resource "aws_wafv2_web_acl" "main" {
     }
   }
 
-  # ── AWS Managed Rules: SQL Injection ───────────────────────────────────
   rule {
     name     = "AWSManagedRulesSQLiRuleSet"
     priority = 2
@@ -65,8 +54,6 @@ resource "aws_wafv2_web_acl" "main" {
     }
   }
 
-  # ── Rate Limiting: 100 requests per 5 minutes per IP ──────────────────
-  # Replaces Nginx limit_req_zone $binary_remote_addr zone=api:10m rate=100r/m
   rule {
     name     = "RateLimit"
     priority = 3
@@ -77,7 +64,7 @@ resource "aws_wafv2_web_acl" "main" {
 
     statement {
       rate_based_statement {
-        limit              = 500 # per 5-minute window
+        limit              = 500
         aggregate_key_type = "IP"
       }
     }
@@ -98,8 +85,6 @@ resource "aws_wafv2_web_acl" "main" {
   tags = { Name = "${var.project}-waf" }
 }
 
-# Attach WAF to Public ALB
-resource "aws_wafv2_web_acl_association" "alb" {
-  resource_arn = var.public_alb_arn
-  web_acl_arn  = aws_wafv2_web_acl.main.arn
-}
+# NOTE: WAF v2 regional WebACL cannot attach directly to HTTP API (apigatewayv2).
+# To use WAF with HTTP API, attach WAF to the CloudFront distribution instead.
+# For REST API (apigateway v1), the association below would work.

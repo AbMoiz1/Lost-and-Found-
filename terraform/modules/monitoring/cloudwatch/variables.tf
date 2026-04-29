@@ -1,9 +1,13 @@
 variable "project" { type = string }
-variable "ecs_cluster_name" { type = string }
-variable "public_alb_arn_suffix" { type = string }
-
 variable "alarm_email" {
-  description = "Email to receive alarm notifications (leave empty to skip)"
+  type    = string
+  default = ""
+}
+variable "lambda_function_names" {
+  description = "List of Lambda function names to monitor"
+  type        = list(string)
+}
+variable "api_gateway_id" {
+  description = "API Gateway ID for 5xx alarm"
   type        = string
-  default     = ""
 }

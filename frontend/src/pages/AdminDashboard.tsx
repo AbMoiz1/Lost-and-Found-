@@ -10,10 +10,15 @@ function safeFormatDate(dateStr: string | null | undefined): string {
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return 'N/A';
     return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-  } catch {
-    return 'N/A';
-  }
+  } catch { return 'N/A'; }
 }
+
+const statGradients = [
+  'linear-gradient(135deg, #3b82f6, #2563eb)',
+  'linear-gradient(135deg, var(--orange-500), var(--orange-600))',
+  'linear-gradient(135deg, #22c55e, #16a34a)',
+  'linear-gradient(135deg, #a855f7, #7c3aed)',
+];
 
 const AdminDashboard: React.FC = () => {
   const queryClient = useQueryClient();
@@ -52,52 +57,65 @@ const AdminDashboard: React.FC = () => {
     },
   });
 
+  const statItems = stats ? [
+    { label: 'Total Users', value: stats.totalUsers },
+    { label: 'Total Items', value: stats.totalItems },
+    { label: 'Total Matches', value: stats.totalMatches },
+    { label: 'Total Claims', value: stats.totalClaims },
+  ] : [];
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Admin Dashboard</h1>
+    <div style={{ minHeight: '100vh', background: 'var(--gray-50)', padding: '2rem 1.5rem' }}>
+      <div style={{ maxWidth: '80rem', margin: '0 auto' }}>
+        <h1 className="fade-in-up" style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--gray-900)', marginBottom: '2rem' }}>
+          Admin Dashboard
+        </h1>
 
         {/* Stats */}
         {statsLoading ? (
-          <div className="flex justify-center py-8"><LoadingSpinner /></div>
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem 0' }}><LoadingSpinner /></div>
         ) : stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            {[
-              { label: 'Total Users', value: stats.totalUsers, color: 'from-blue-500 to-blue-600' },
-              { label: 'Total Items', value: stats.totalItems, color: 'from-orange-500 to-orange-600' },
-              { label: 'Total Matches', value: stats.totalMatches, color: 'from-green-500 to-green-600' },
-              { label: 'Total Claims', value: stats.totalClaims, color: 'from-purple-500 to-purple-600' },
-            ].map(s => (
-              <div key={s.label} className={`card p-6 bg-gradient-to-br ${s.color} text-white`}>
-                <p className="text-sm opacity-80">{s.label}</p>
-                <p className="text-3xl font-bold">{s.value}</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+            {statItems.map((s, i) => (
+              <div key={s.label} className={`fade-in-up delay-${i + 1}`} style={{
+                background: statGradients[i],
+                borderRadius: 'var(--radius)',
+                padding: '1.5rem',
+                color: 'white',
+                boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
+              }}>
+                <p style={{ fontSize: '0.8rem', opacity: 0.85, marginBottom: '0.25rem' }}>{s.label}</p>
+                <p style={{ fontSize: '2rem', fontWeight: 800 }}>{s.value}</p>
               </div>
             ))}
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* User Search */}
-          <div className="card p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">User Management</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.5rem' }}>
+          {/* User Management */}
+          <div className="card-static fade-in-up delay-2" style={{ padding: '1.5rem' }}>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--gray-900)', marginBottom: '1rem' }}>User Management</h2>
             <input type="text" placeholder="Search users by email or name..."
-              className="input mb-4" value={userSearch}
-              onChange={e => setUserSearch(e.target.value)} />
+              className="input" style={{ marginBottom: '1rem' }}
+              value={userSearch} onChange={e => setUserSearch(e.target.value)} />
             {usersLoading ? <LoadingSpinner /> : (
-              <div className="space-y-3 max-h-80 overflow-y-auto">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '20rem', overflowY: 'auto' }}>
                 {users.map((u: User) => (
-                  <div key={u.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div key={u.id} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '0.75rem', background: 'var(--gray-50)', borderRadius: '0.5rem',
+                  }}>
                     <div>
-                      <p className="font-medium text-gray-900">{u.name}</p>
-                      <p className="text-sm text-gray-500">{u.email}</p>
-                      <span className={`badge ${u.isActive ? 'badge-success' : 'badge-error'}`}>
+                      <p style={{ fontWeight: 600, color: 'var(--gray-900)', fontSize: '0.9rem' }}>{u.name}</p>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--gray-500)' }}>{u.email}</p>
+                      <span className={`badge ${u.isActive ? 'badge-success' : 'badge-error'}`} style={{ marginTop: '0.25rem' }}>
                         {u.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </div>
                     {u.isActive && (
                       <button onClick={() => deactivateMutation.mutate(u.id)}
                         disabled={deactivateMutation.isPending}
-                        className="btn-ghost text-sm text-red-600">
+                        className="btn btn-ghost" style={{ fontSize: '0.8rem', color: '#dc2626' }}>
                         Deactivate
                       </button>
                     )}
@@ -108,27 +126,30 @@ const AdminDashboard: React.FC = () => {
           </div>
 
           {/* Pending Claims */}
-          <div className="card p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Pending Claims</h2>
+          <div className="card-static fade-in-up delay-3" style={{ padding: '1.5rem' }}>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--gray-900)', marginBottom: '1rem' }}>Pending Claims</h2>
             {claimsLoading ? <LoadingSpinner /> : claims.length === 0 ? (
-              <p className="text-gray-500">No pending claims.</p>
+              <p style={{ color: 'var(--gray-500)', fontSize: '0.9rem' }}>No pending claims.</p>
             ) : (
-              <div className="space-y-3 max-h-80 overflow-y-auto">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '20rem', overflowY: 'auto' }}>
                 {claims.map((c: Claim) => (
-                  <div key={c.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div key={c.id} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '0.75rem', background: 'var(--gray-50)', borderRadius: '0.5rem',
+                  }}>
                     <div>
-                      <p className="text-sm text-gray-500">Claim #{c.id.slice(0, 8)}</p>
-                      <p className="text-sm text-gray-500">{safeFormatDate(c.createdAt)}</p>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--gray-600)', fontWeight: 500 }}>Claim #{c.id.slice(0, 8)}</p>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--gray-400)' }}>{safeFormatDate(c.createdAt)}</p>
                     </div>
-                    <div className="flex gap-2">
+                    <div style={{ display: 'flex', gap: '0.4rem' }}>
                       <button onClick={() => claimMutation.mutate({ claimId: c.id, status: 'approved' })}
                         disabled={claimMutation.isPending}
-                        className="btn-primary text-sm py-1 px-3">
+                        className="btn btn-primary" style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem' }}>
                         Approve
                       </button>
                       <button onClick={() => claimMutation.mutate({ claimId: c.id, status: 'rejected' })}
                         disabled={claimMutation.isPending}
-                        className="btn-ghost text-sm text-red-600">
+                        className="btn btn-ghost" style={{ fontSize: '0.75rem', color: '#dc2626' }}>
                         Reject
                       </button>
                     </div>

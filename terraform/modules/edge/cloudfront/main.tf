@@ -1,16 +1,5 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# Moiz Lost and Found Webapp — CloudFront Module
-# ─────────────────────────────────────────────────────────────────────────────
-# LOCAL EQUIVALENT: Frontend Nginx container (:3000) serves React app and
-# proxies /api/* to Gateway. CloudFront replaces this with:
-#   - S3 origin for static files (React app)
-#   - ALB origin for /api/* requests
-#
-# SA EXAM NOTE:
-#   - CloudFront has 400+ edge locations worldwide for low latency
-#   - Behaviors = Nginx location blocks (path-based routing to origins)
-#   - OAI restricts direct S3 access — users must go through CloudFront
-#   - Cache invalidation needed after frontend deploys
+# CloudFront — Updated for serverless (API Gateway origin replaces ALB)
 # ─────────────────────────────────────────────────────────────────────────────
 
 resource "aws_cloudfront_distribution" "main" {
@@ -18,7 +7,7 @@ resource "aws_cloudfront_distribution" "main" {
   default_root_object = "index.html"
   comment             = "${var.project} distribution"
 
-  # ── S3 ORIGIN (frontend static files) ──────────────────────────────────
+  # S3 origin — frontend static files
   origin {
     domain_name = var.frontend_bucket_regional_domain
     origin_id   = "s3-frontend"
@@ -28,20 +17,20 @@ resource "aws_cloudfront_distribution" "main" {
     }
   }
 
-  # ── ALB ORIGIN (API requests) ──────────────────────────────────────────
+  # API Gateway origin — replaces ALB origin
   origin {
-    domain_name = var.public_alb_dns
-    origin_id   = "alb-api"
+    domain_name = replace(var.api_gateway_endpoint, "https://", "")
+    origin_id   = "api-gateway"
 
     custom_origin_config {
       http_port              = 80
       https_port             = 443
-      origin_protocol_policy = "http-only" # ALB listener is HTTP for dev
+      origin_protocol_policy = "https-only"
       origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
 
-  # ── DEFAULT BEHAVIOR: /* → S3 (cached static files) ───────────────────
+  # Default: /* → S3 (cached static files)
   default_cache_behavior {
     allowed_methods        = ["GET", "HEAD"]
     cached_methods         = ["GET", "HEAD"]
@@ -54,30 +43,29 @@ resource "aws_cloudfront_distribution" "main" {
     }
 
     min_ttl     = 0
-    default_ttl = 86400  # 24 hours
-    max_ttl     = 604800 # 7 days
+    default_ttl = 86400
+    max_ttl     = 604800
   }
 
-  # ── /api/* BEHAVIOR → ALB (no cache, forward everything) ──────────────
+  # /api/* → API Gateway (no cache, forward everything)
   ordered_cache_behavior {
     path_pattern           = "/api/*"
     allowed_methods        = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
     cached_methods         = ["GET", "HEAD"]
-    target_origin_id       = "alb-api"
+    target_origin_id       = "api-gateway"
     viewer_protocol_policy = "redirect-to-https"
 
     forwarded_values {
       query_string = true
-      headers      = ["Authorization", "Host", "Origin"]
+      headers      = ["Authorization", "Origin"]
       cookies { forward = "all" }
     }
 
     min_ttl     = 0
-    default_ttl = 0 # no caching for API
+    default_ttl = 0
     max_ttl     = 0
   }
 
-  # SPA routing — return index.html for 403/404 (React Router handles routes)
   custom_error_response {
     error_code         = 403
     response_code      = 200
@@ -95,7 +83,7 @@ resource "aws_cloudfront_distribution" "main" {
   }
 
   viewer_certificate {
-    cloudfront_default_certificate = true # use default *.cloudfront.net cert for dev
+    cloudfront_default_certificate = true
   }
 
   tags = { Name = "${var.project}-distribution" }

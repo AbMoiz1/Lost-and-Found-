@@ -1,0 +1,53 @@
+version: 0.2
+
+env:
+  variables:
+    PROJECT: moiz-lost-and-found
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 20
+
+  build:
+    commands:
+      # Build and deploy each Node.js HTTP service
+      - |
+        for SERVICE in auth item search image admin; do
+          echo "=== Building $SERVICE ==="
+          cd services/$SERVICE
+          npm ci
+          npx tsc
+          cd dist
+          cp -r ../node_modules .
+          zip -qr ../lambda.zip .
+          cd ..
+          
+          echo "=== Deploying $SERVICE ==="
+          aws lambda update-function-code \
+            --function-name ${PROJECT}-${SERVICE} \
+            --zip-file fileb://lambda.zip
+          aws lambda update-function-configuration \
+            --function-name ${PROJECT}-${SERVICE} \
+            --handler lambda.handler
+          
+          rm -rf dist/node_modules lambda.zip
+          cd ../..
+        done
+
+      # Build and deploy search indexer
+      - |
+        echo "=== Building search-indexer ==="
+        cd services/search/dist
+        cp -r ../node_modules .
+        zip -qr ../lambda-indexer.zip .
+        cd ..
+        
+        echo "=== Deploying search-indexer ==="
+        aws lambda update-function-code \
+          --function-name ${PROJECT}-search-indexer \
+          --zip-file fileb://lambda-indexer.zip
+        aws lambda update-function-configuration \
+          --function-name ${PROJECT}-search-indexer \
+          --handler lambda-indexer.handler
+        cd ../..
