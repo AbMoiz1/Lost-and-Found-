@@ -16,7 +16,7 @@ phases:
         for SERVICE in auth item search image admin; do
           echo "=== Building $SERVICE ==="
           cd services/$SERVICE
-          npm ci --production
+          npm ci
           npx tsc
           
           echo "=== Packaging $SERVICE ==="
