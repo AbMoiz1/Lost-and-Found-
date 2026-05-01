@@ -69,9 +69,10 @@ resource "aws_codepipeline" "main" {
       output_artifacts = ["source_output"]
 
       configuration = {
-        ConnectionArn    = aws_codestarconnections_connection.github.arn
-        FullRepositoryId = var.github_repo
-        BranchName       = var.github_branch
+        ConnectionArn        = aws_codestarconnections_connection.github.arn
+        FullRepositoryId     = var.github_repo
+        BranchName           = var.github_branch
+        DetectChanges        = "true"
       }
     }
   }
@@ -126,22 +127,4 @@ resource "aws_codepipeline" "main" {
   tags = { Name = "${var.project}-pipeline" }
 }
 
-# ── Webhook — auto-trigger pipeline on push to serverless-deployment branch ──
-
-resource "aws_codepipeline_webhook" "github" {
-  name            = "${var.project}-github-webhook"
-  authentication  = "GITHUB_HMAC"
-  target_action   = "GitHub"
-  target_pipeline = aws_codepipeline.main.name
-
-  authentication_configuration {
-    secret_token = var.webhook_secret
-  }
-
-  filter {
-    json_path    = "$.ref"
-    match_equals = "refs/heads/${var.github_branch}"
-  }
-
-  tags = { Name = "${var.project}-github-webhook" }
-}
+# Auto-trigger is handled by DetectChanges = true on the CodeStar source action above.
