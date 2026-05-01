@@ -38,7 +38,6 @@ async function indexItem(event: ItemEvent): Promise<void> {
     index: INDEX_NAME,
     id: event.itemId,
     body: doc,
-    refresh: true,
   });
 }
 
