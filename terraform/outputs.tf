@@ -60,3 +60,8 @@ output "github_connection_status" {
   description = "Must be AVAILABLE — go to AWS Console > CodePipeline > Settings > Connections to approve"
   value       = module.cicd.github_connection_status
 }
+
+output "webhook_url" {
+  description = "Add this as a GitHub webhook: Settings > Webhooks > Add webhook"
+  value       = module.cicd.webhook_url
+}

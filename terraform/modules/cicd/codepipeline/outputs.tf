@@ -13,3 +13,8 @@ output "github_connection_arn" {
 output "github_connection_status" {
   value = aws_codestarconnections_connection.github.connection_status
 }
+
+output "webhook_url" {
+  description = "Add this URL as a GitHub webhook on your repo"
+  value       = aws_codepipeline_webhook.github.url
+}

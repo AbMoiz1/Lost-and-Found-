@@ -70,7 +70,11 @@ router.get('/items', async (req: Request, res: Response) => {
     const items = hits.map((hit: { _source: unknown }) => hit._source);
 
     res.json(items);
-  } catch (err) {
+  } catch (err: any) {
+    // Return empty results if index doesn't exist yet
+    if (err?.meta?.body?.error?.type === 'index_not_found_exception') {
+      return res.json([]);
+    }
     console.error('Search error:', err);
     res.status(500).json({ error: 'SEARCH_ERROR' });
   }

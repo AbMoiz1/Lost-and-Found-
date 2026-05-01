@@ -12,3 +12,10 @@ variable "github_branch" {
   type        = string
   default     = "serverless-deployment"
 }
+
+variable "webhook_secret" {
+  description = "Secret token for GitHub webhook HMAC validation"
+  type        = string
+  sensitive   = true
+  default     = "lost-and-found-webhook-secret-2024"
+}
