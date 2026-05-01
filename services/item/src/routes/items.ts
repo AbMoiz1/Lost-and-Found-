@@ -70,6 +70,17 @@ async function createItem(req: Request, res: Response, type: 'lost' | 'found') {
   return res.status(201).json(item);
 }
 
+// ── GET /api/items/my ─────────────────────────────────────────────────────────
+
+router.get('/my', authenticate, async (req: Request, res: Response) => {
+  const ownerId = req.user!.sub;
+  const result = await pool.query(
+    `SELECT * FROM items WHERE owner_id = $1 AND status != 'deleted' ORDER BY created_at DESC`,
+    [ownerId],
+  );
+  return res.status(200).json(result.rows);
+});
+
 // ── GET /api/items/:id ────────────────────────────────────────────────────────
 
 router.get('/:id', async (req: Request, res: Response) => {

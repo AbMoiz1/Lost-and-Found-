@@ -4,7 +4,7 @@ let connection: any = null;
 let channel: any = null;
 
 // Check if we're running on AWS (SNS) or locally (RabbitMQ)
-const useAws = !!process.env.SNS_ITEMS_TOPIC_ARN;
+const useAws = !!process.env.ITEMS_TOPIC_ARN;
 
 let snsClient: any = null;
 let topicArn: string | undefined;
@@ -13,7 +13,7 @@ export async function connectMessageBroker(): Promise<void> {
   if (useAws) {
     const { SNSClient } = await import('@aws-sdk/client-sns');
     snsClient = new SNSClient({ region: process.env.AWS_REGION ?? 'us-east-1' });
-    topicArn = process.env.SNS_ITEMS_TOPIC_ARN;
+    topicArn = process.env.ITEMS_TOPIC_ARN;
     console.log('AWS SNS message broker configured, topic:', topicArn);
     return;
   }

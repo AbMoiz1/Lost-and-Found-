@@ -12,8 +12,9 @@
   },
   "dependencies": {
     "@aws-sdk/client-sqs": "^3.1037.0",
-    "@vendia/serverless-express": "^4.12.6",
+    "@aws-sdk/credential-provider-node": "^3.972.38",
     "@opensearch-project/opensearch": "^2.6.0",
+    "@vendia/serverless-express": "^4.12.6",
     "amqplib": "^0.10.4",
     "express": "^4.19.2",
     "zod": "^3.23.8"
