@@ -1,18 +1,20 @@
 import serverlessExpress from '@vendia/serverless-express';
 import app from './app';
 import { runMigrations } from './migrate';
+import { connectMessageBroker } from './messageBroker';
 
-let migrated = false;
+let initialized = false;
 
 const serverless = serverlessExpress({ app });
 
 export const handler = async (event: any, context: any) => {
-  if (!migrated) {
+  if (!initialized) {
     try {
       await runMigrations();
-      migrated = true;
+      await connectMessageBroker();
+      initialized = true;
     } catch (err) {
-      console.error('Migration failed:', err);
+      console.error('Init failed:', err);
     }
   }
   return serverless(event, context);

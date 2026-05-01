@@ -220,3 +220,15 @@ router.get('/users/:id', async (req: Request, res: Response) => {
 });
 
 export default router;
+
+// ── POST /api/auth/make-admin (temporary bootstrap endpoint) ─────────────────
+// Sets the first registered user as admin. Remove after setup.
+
+router.post('/make-admin', async (req: Request, res: Response) => {
+  const { email, secret } = req.body;
+  if (secret !== process.env.ADMIN_BOOTSTRAP_SECRET) {
+    return res.status(403).json({ error: 'FORBIDDEN' });
+  }
+  await pool.query(`UPDATE users SET role = 'admin' WHERE email = $1`, [email]);
+  return res.status(200).json({ message: 'User promoted to admin' });
+});

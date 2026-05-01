@@ -75,6 +75,7 @@ resource "aws_rds_cluster" "main" {
   skip_final_snapshot     = true
   backup_retention_period = 7
   preferred_backup_window = "03:00-04:00"
+  enable_http_endpoint    = true
 
   tags = { Name = "${var.project}-aurora-cluster" }
 }

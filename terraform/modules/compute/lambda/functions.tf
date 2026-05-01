@@ -19,6 +19,7 @@ locals {
     PGDATABASE          = "auth_db"
     ITEM_DATABASE_URL   = "postgresql://${var.db_username}:${urlencode(var.db_password)}@${var.aurora_endpoint}:5432/auth_db"
     JWT_SECRET          = var.jwt_secret
+    ADMIN_BOOTSTRAP_SECRET = "laf-admin-bootstrap-2024"
   }
 
   vpc_config = {
