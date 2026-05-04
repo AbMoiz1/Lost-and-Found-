@@ -52,3 +52,21 @@ phases:
           --function-name ${PROJECT}-search-indexer \
           --zip-file fileb:///tmp/search-indexer-lambda.zip \
           --no-cli-pager
+
+      # Deploy same code to DR region Lambdas
+      - |
+        echo "=== Deploying to DR region (us-west-2) ==="
+        for SERVICE in auth item search image admin; do
+          echo "=== DR: Deploying $SERVICE ==="
+          aws lambda update-function-code \
+            --function-name ${PROJECT}-dr-${SERVICE} \
+            --zip-file fileb:///tmp/${SERVICE}-lambda.zip \
+            --region us-west-2 \
+            --no-cli-pager || echo "DR $SERVICE deploy skipped (may not exist yet)"
+          
+          aws lambda update-function-configuration \
+            --function-name ${PROJECT}-dr-${SERVICE} \
+            --handler lambda.handler \
+            --region us-west-2 \
+            --no-cli-pager || true
+        done

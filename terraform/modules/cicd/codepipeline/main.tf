@@ -78,7 +78,10 @@ resource "aws_iam_role_policy" "codebuild" {
           "lambda:UpdateFunctionConfiguration",
           "lambda:GetFunction"
         ]
-        Resource = "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.project}-*"
+        Resource = [
+          "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.project}-*",
+          "arn:aws:lambda:us-west-2:${data.aws_caller_identity.current.account_id}:function:${var.project}-*"
+        ]
       },
       {
         Effect   = "Allow"
