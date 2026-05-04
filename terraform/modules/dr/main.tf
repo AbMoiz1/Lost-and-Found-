@@ -225,7 +225,7 @@ resource "aws_lambda_function" "dr_auth" {
   provider      = aws.dr
   function_name = "${var.project}-dr-auth"
   role          = aws_iam_role.dr_lambda.arn
-  handler       = "index.handler"
+  handler       = "lambda.handler"
   runtime       = "nodejs20.x"
   timeout       = 30
   memory_size   = 256
@@ -312,7 +312,7 @@ resource "aws_lambda_function" "dr_item" {
   provider      = aws.dr
   function_name = "${var.project}-dr-item"
   role          = aws_iam_role.dr_lambda.arn
-  handler       = "index.handler"
+  handler       = "lambda.handler"
   runtime       = "nodejs20.x"
   timeout       = 30
   memory_size   = 256
@@ -363,7 +363,7 @@ resource "aws_lambda_function" "dr_search" {
   provider      = aws.dr
   function_name = "${var.project}-dr-search"
   role          = aws_iam_role.dr_lambda.arn
-  handler       = "index.handler"
+  handler       = "lambda.handler"
   runtime       = "nodejs20.x"
   timeout       = 30
   memory_size   = 256
@@ -414,7 +414,7 @@ resource "aws_lambda_function" "dr_image" {
   provider      = aws.dr
   function_name = "${var.project}-dr-image"
   role          = aws_iam_role.dr_lambda.arn
-  handler       = "index.handler"
+  handler       = "lambda.handler"
   runtime       = "nodejs20.x"
   timeout       = 30
   memory_size   = 512
@@ -465,7 +465,7 @@ resource "aws_lambda_function" "dr_admin" {
   provider      = aws.dr
   function_name = "${var.project}-dr-admin"
   role          = aws_iam_role.dr_lambda.arn
-  handler       = "index.handler"
+  handler       = "lambda.handler"
   runtime       = "nodejs20.x"
   timeout       = 30
   memory_size   = 256
