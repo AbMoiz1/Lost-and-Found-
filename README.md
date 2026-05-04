@@ -7,7 +7,8 @@ A microservices-based web application migrated to a fully serverless architectur
 | Environment | URL |
 |-------------|-----|
 | Frontend (CloudFront) | `https://d1zjw94zgeibun.cloudfront.net` |
-| API Gateway (Primary) | `https://7tyrsiyxhe.execute-api.us-east-1.amazonaws.com` |
+| API Gateway (Primary — us-east-1) | `https://7tyrsiyxhe.execute-api.us-east-1.amazonaws.com` |
+| API Gateway (DR — us-west-2) | `https://me16fyvk7g.execute-api.us-west-2.amazonaws.com` |
 
 ## Architecture
 
