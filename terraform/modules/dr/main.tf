@@ -159,6 +159,8 @@ resource "aws_rds_cluster" "dr" {
   global_cluster_identifier = var.aurora_global_cluster_id
   db_subnet_group_name      = aws_db_subnet_group.dr.name
   vpc_security_group_ids    = [aws_security_group.dr_aurora.id]
+  master_username           = "dbadmin"
+  master_password           = var.db_master_password
   skip_final_snapshot       = true
   deletion_protection       = false
 
@@ -170,7 +172,7 @@ resource "aws_rds_cluster" "dr" {
   tags = { Name = "${var.project}-dr-aurora-cluster" }
 
   lifecycle {
-    ignore_changes = [replication_source_identifier, master_username, master_password]
+    ignore_changes = [replication_source_identifier, master_username, master_password, global_cluster_identifier]
   }
 }
 
@@ -228,11 +230,6 @@ resource "aws_lambda_function" "dr_auth" {
   timeout       = 30
   memory_size   = 256
   filename      = data.archive_file.placeholder.output_path
-
-  vpc_config {
-    subnet_ids         = aws_subnet.dr[*].id
-    security_group_ids = [aws_security_group.dr_lambda.id]
-  }
 
   environment {
     variables = {
@@ -321,11 +318,6 @@ resource "aws_lambda_function" "dr_item" {
   memory_size   = 256
   filename      = data.archive_file.placeholder.output_path
 
-  vpc_config {
-    subnet_ids         = aws_subnet.dr[*].id
-    security_group_ids = [aws_security_group.dr_lambda.id]
-  }
-
   environment {
     variables = {
       PGHOST     = aws_rds_cluster.dr.endpoint
@@ -376,11 +368,6 @@ resource "aws_lambda_function" "dr_search" {
   timeout       = 30
   memory_size   = 256
   filename      = data.archive_file.placeholder.output_path
-
-  vpc_config {
-    subnet_ids         = aws_subnet.dr[*].id
-    security_group_ids = [aws_security_group.dr_lambda.id]
-  }
 
   environment {
     variables = {
@@ -433,11 +420,6 @@ resource "aws_lambda_function" "dr_image" {
   memory_size   = 512
   filename      = data.archive_file.placeholder.output_path
 
-  vpc_config {
-    subnet_ids         = aws_subnet.dr[*].id
-    security_group_ids = [aws_security_group.dr_lambda.id]
-  }
-
   environment {
     variables = {
       PGHOST     = aws_rds_cluster.dr.endpoint
@@ -488,11 +470,6 @@ resource "aws_lambda_function" "dr_admin" {
   timeout       = 30
   memory_size   = 256
   filename      = data.archive_file.placeholder.output_path
-
-  vpc_config {
-    subnet_ids         = aws_subnet.dr[*].id
-    security_group_ids = [aws_security_group.dr_lambda.id]
-  }
 
   environment {
     variables = {
@@ -611,3 +588,4 @@ resource "aws_cloudwatch_metric_alarm" "dr_api_health" {
 
   tags = { Name = "${var.project}-dr-health-alarm" }
 }
+
