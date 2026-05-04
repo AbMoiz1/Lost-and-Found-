@@ -1,19 +1,4 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# Moiz Lost and Found Webapp — SNS + SQS Messaging Module
-# ─────────────────────────────────────────────────────────────────────────────
-# LOCAL EQUIVALENT: RabbitMQ with fanout exchanges.
-#   "items" exchange → Search Service + Matching Service queues
-#   "matches" exchange → Notification Service queue
-#
-# SA EXAM NOTE:
-#   - SNS = pub/sub, push-based. Replaces RabbitMQ fanout exchanges.
-#   - SQS = queue, pull-based. Consumers poll for messages.
-#   - SNS → SQS fan-out: one publish, multiple consumers. AWS-native pattern.
-#   - DLQ: after N failed attempts, message moves to DLQ for inspection.
-#   - Visibility timeout: message invisible to other consumers while processing.
-#   - Long polling (20s): reduces empty responses and API costs.
-#   - Both are serverless — no broker container, scales automatically.
-# ─────────────────────────────────────────────────────────────────────────────
+
 
 # ── SNS TOPICS (the broadcasters) ────────────────────────────────────────────
 

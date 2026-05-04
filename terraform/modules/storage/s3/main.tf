@@ -1,20 +1,13 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# Moiz Lost and Found Webapp — S3 Buckets Module
-# ─────────────────────────────────────────────────────────────────────────────
-# LOCAL EQUIVALENT:
-#   Images: LocalStack S3 on port 4566, bucket "lost-and-found-images",
-#           test credentials, forcePathStyle: true
-#   Frontend: Nginx container serves React build from disk on port 3000
-#
-# SA EXAM NOTE:
-#   - S3 durability: 99.999999999% (11 nines) — data replicated across 3+ AZs
-#   - S3 availability: 99.99% for Standard class
-#   - SSE-S3 (AES-256) is free. SSE-KMS gives key control but costs more.
-#   - Static website hosting: S3 serves index.html for any path (SPA routing)
-#   - OAI (Origin Access Identity): CloudFront identity that S3 trusts.
-#     Users can't bypass CloudFront and hit S3 directly.
-#   - Public access block: 4 settings that prevent accidental public exposure
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+terraform {
+  required_providers {
+    aws = {
+      source                = "hashicorp/aws"
+      configuration_aliases = [aws.dr]
+    }
+  }
+}
 
 # ── IMAGES BUCKET ────────────────────────────────────────────────────────────
 # Replaces LocalStack S3 bucket "lost-and-found-images"
@@ -128,4 +121,90 @@ resource "aws_s3_bucket_policy" "frontend" {
   })
 
   depends_on = [aws_s3_bucket_public_access_block.frontend]
+}
+
+# ── S3 CROSS-REGION REPLICATION (Images → DR region) ─────────────────────────
+
+resource "aws_iam_role" "replication" {
+  name = "${var.project}-s3-replication-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "s3.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "replication" {
+  name = "${var.project}-s3-replication-policy"
+  role = aws_iam_role.replication.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["s3:GetReplicationConfiguration", "s3:ListBucket"]
+        Resource = [aws_s3_bucket.images.arn]
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["s3:GetObjectVersionForReplication", "s3:GetObjectVersionAcl", "s3:GetObjectVersionTagging"]
+        Resource = ["${aws_s3_bucket.images.arn}/*"]
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["s3:ReplicateObject", "s3:ReplicateDelete", "s3:ReplicateTags"]
+        Resource = ["${aws_s3_bucket.images_dr.arn}/*"]
+      }
+    ]
+  })
+}
+
+resource "aws_s3_bucket" "images_dr" {
+  provider = aws.dr
+  bucket   = "${var.project}-images-dr-${var.environment}"
+  tags     = { Name = "${var.project}-images-dr-${var.environment}" }
+}
+
+resource "aws_s3_bucket_versioning" "images_dr" {
+  provider = aws.dr
+  bucket   = aws_s3_bucket.images_dr.id
+  versioning_configuration { status = "Enabled" }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "images_dr" {
+  provider = aws.dr
+  bucket   = aws_s3_bucket.images_dr.id
+  rule {
+    apply_server_side_encryption_by_default { sse_algorithm = "AES256" }
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "images_dr" {
+  provider                = aws.dr
+  bucket                  = aws_s3_bucket.images_dr.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_replication_configuration" "images" {
+  depends_on = [aws_s3_bucket_versioning.images]
+  bucket     = aws_s3_bucket.images.id
+  role       = aws_iam_role.replication.arn
+
+  rule {
+    id     = "replicate-all"
+    status = "Enabled"
+
+    destination {
+      bucket        = aws_s3_bucket.images_dr.arn
+      storage_class = "STANDARD"
+    }
+  }
 }

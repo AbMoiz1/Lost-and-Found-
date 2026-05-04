@@ -1,9 +1,4 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# Aurora Serverless v2 — Replaces 4 separate RDS PostgreSQL instances
-# ─────────────────────────────────────────────────────────────────────────────
-# Aurora requires a VPC with subnets. We create a minimal private VPC
-# just for the database — no NAT, no IGW, no public access.
-# ─────────────────────────────────────────────────────────────────────────────
+
 
 data "aws_availability_zones" "available" {
   state = "available"
@@ -53,14 +48,22 @@ resource "aws_security_group" "aurora" {
   tags = { Name = "${var.project}-aurora-sg" }
 }
 
+resource "aws_rds_global_cluster" "main" {
+  global_cluster_identifier = "${var.project}-global-cluster"
+  engine                    = "aurora-postgresql"
+  engine_version            = "16.4"
+  database_name             = "auth_db"
+  storage_encrypted         = true
+}
+
 resource "aws_rds_cluster" "main" {
-  cluster_identifier = "${var.project}-aurora-cluster"
-  engine             = "aurora-postgresql"
-  engine_mode        = "provisioned"
-  engine_version     = "16.4"
-  database_name      = "auth_db"
-  master_username    = "dbadmin"
-  master_password    = var.db_master_password
+  cluster_identifier        = "${var.project}-aurora-cluster"
+  engine                    = "aurora-postgresql"
+  engine_mode               = "provisioned"
+  engine_version            = "16.4"
+  global_cluster_identifier = aws_rds_global_cluster.main.id
+  master_username           = "dbadmin"
+  master_password           = var.db_master_password
 
   db_subnet_group_name   = aws_db_subnet_group.aurora.name
   vpc_security_group_ids = [aws_security_group.aurora.id]
@@ -78,6 +81,10 @@ resource "aws_rds_cluster" "main" {
   enable_http_endpoint    = true
 
   tags = { Name = "${var.project}-aurora-cluster" }
+
+  lifecycle {
+    ignore_changes = [global_cluster_identifier, master_password]
+  }
 }
 
 resource "aws_rds_cluster_instance" "writer" {

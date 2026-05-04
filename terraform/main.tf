@@ -13,6 +13,10 @@ module "s3" {
   source      = "./modules/storage/s3"
   project     = var.project
   environment = var.environment
+
+  providers = {
+    aws.dr = aws.dr
+  }
 }
 
 # ── Module 3: SNS + SQS Messaging ───────────────────────────────────────────
@@ -122,6 +126,9 @@ module "route53" {
   cloudfront_domain_name    = module.cloudfront.distribution_domain_name
   cloudfront_hosted_zone_id = module.cloudfront.distribution_hosted_zone_id
   api_gateway_endpoint      = module.api_gateway.api_endpoint
+  dr_api_endpoint           = module.dr.dr_api_endpoint
+
+  depends_on = [module.dr]
 }
 
 # ── Module 15: CI/CD Pipeline ────────────────────────────────────────────
@@ -131,4 +138,18 @@ module "cicd" {
   environment   = var.environment
   github_repo   = var.github_repo
   github_branch = "serverless-deployment"
+}
+# ── Module 16: Disaster Recovery (DR) Region ──────────────────────────────────
+module "dr" {
+  source                     = "./modules/dr"
+  project                    = var.project
+  aurora_global_cluster_id   = module.aurora.global_cluster_id
+  db_master_password         = var.db_master_password
+  jwt_secret                 = module.secrets.jwt_secret_value
+
+  providers = {
+    aws.dr = aws.dr
+  }
+
+  depends_on = [module.aurora]
 }

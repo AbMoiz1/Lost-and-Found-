@@ -29,3 +29,7 @@ output "security_group_id" {
 output "master_username" {
   value = aws_rds_cluster.main.master_username
 }
+
+output "global_cluster_id" {
+  value = aws_rds_global_cluster.main.id
+}

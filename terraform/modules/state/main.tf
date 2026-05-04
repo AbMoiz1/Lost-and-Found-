@@ -1,22 +1,4 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# Moiz Lost and Found Webapp — Terraform State Module
-# ─────────────────────────────────────────────────────────────────────────────
-# LOCAL EQUIVALENT: None. Locally you just run "docker-compose up" and there's
-# no state to manage. Terraform state tracks every AWS resource it creates —
-# without it, Terraform wouldn't know what exists and what doesn't.
-#
-# SA EXAM NOTE: Remote state in S3 + DynamoDB locking is the standard pattern
-# for team-based Terraform. The exam tests:
-#   - Why S3? → Durable (11 nines), versioned (rollback state), encrypted
-#   - Why DynamoDB? → Supports conditional writes = perfect for locking
-#   - Why locking? → Prevents two people running "terraform apply" at the
-#     same time, which would corrupt the state file
-# ─────────────────────────────────────────────────────────────────────────────
 
-# S3 BUCKET — stores the terraform.tfstate file
-# SA EXAM NOTE: Versioning is critical here. If a bad "terraform apply" corrupts
-# your state, you can roll back to a previous version. Without versioning,
-# a corrupted state means you lose track of all your AWS resources.
 resource "aws_s3_bucket" "terraform_state" {
   bucket = "${var.project}-terraform-state"
 
