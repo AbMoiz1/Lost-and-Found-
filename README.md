@@ -12,26 +12,8 @@ A microservices-based web application migrated to a fully serverless architectur
 
 ## Architecture
 
-```
-Users → Route 53 → CloudFront
-  ├── /* → S3 (React frontend, us-east-1)
-  └── /api/* → WAF → API Gateway (HTTP API)
-                        ├── /api/auth/*   → Auth Lambda    → Aurora Serverless v2
-                        ├── /api/items/*  → Item Lambda    → Aurora + SNS
-                        ├── /api/search/* → Search Lambda  → OpenSearch Serverless
-                        ├── /api/images/* → Image Lambda   → S3 Images
-                        └── /api/admin/*  → Admin Lambda   → Aurora Serverless v2
+<img width="2400" height="1600" alt="image" src="https://github.com/user-attachments/assets/a2657050-6d8d-48e2-b0da-de95ef9c2718" />
 
-SNS Items Topic → SQS Search Queue    → Search Indexer Lambda → OpenSearch Serverless
-                → SQS Matching Queue  → Matching Lambda (Python) → Aurora + ElastiCache Serverless
-                                           └── SNS Matches Topic → SQS Notification Queue
-                                                                      → Notification Lambda → SES
-
-DR Region (us-west-2) — Warm Standby:
-  Route 53 health check → failover → DR API Gateway → DR Lambda functions
-  Aurora Global Database (continuous replication, RPO < 5 min)
-  S3 Cross-Region Replication (images bucket)
-```
 
 ## AWS Services
 
