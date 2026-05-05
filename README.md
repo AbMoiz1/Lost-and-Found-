@@ -35,20 +35,7 @@ A microservices-based web application deployed on AWS using ECS on EC2, Terrafor
 
 ## Architecture
 
-```
-CloudFront (CDN)
-  ├── /* → S3 (React frontend)
-  └── /api/* → Public ALB → Nginx Gateway (ECS) → Internal ALB
-                                                      ├── Auth Service (ECS)     → RDS auth_db
-                                                      ├── Item Service (ECS)     → RDS item_db → SNS
-                                                      ├── Search Service (ECS)   → OpenSearch
-                                                      ├── Image Service (ECS)    → S3 images
-                                                      └── Admin Service (ECS)    → All RDS DBs
-
-SNS items-topic → SQS → Search Service (indexes in OpenSearch)
-                → SQS → Matching Service (ECS, Python) → RDS + Redis
-                           └── SNS matches-topic → SQS → Notification Service (ECS) → SES email
-```
+<img width="2450" height="1633" alt="image" src="https://github.com/user-attachments/assets/16ad7726-9983-48ab-99f3-817c85519189" />
 
 ## AWS Services Used
 
